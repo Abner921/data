@@ -8,14 +8,11 @@ import socket
 from urllib2 import Request, urlopen, URLError, HTTPError
 from Utility import Utility
 from ErrorCode import *
+import MySQLdb
+import sys
 
-COOKIES_FILE = './kan_cookies.dat'
 TIMEOUTS = 50
-
-cj = None
-opener = None
 utility = Utility()
-
 socket.setdefaulttimeout(TIMEOUTS)
 
 # Note: Don't install_opener as a global opener for now, considering
@@ -24,6 +21,12 @@ socket.setdefaulttimeout(TIMEOUTS)
 cj = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 urllib2.install_opener(opener)
+
+conn = MySQLdb.connect(host='127.0.0.1', db='camera', user='root', passwd='', charset='utf8')
+curs = conn.cursor()
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 def fetchOneUrl(requestUrl):
   requestHeaders = {}
@@ -88,10 +91,12 @@ def getRegexMatcher(regPattern):
 def parseBaiduNewsHtml(html_string, keyword):
   articlelist_regex = getRegexMatcher('class=baidu>.*?<div')
   articlelist_matches = articlelist_regex.findall(html_string)
+
+  if len(articlelist_matches) == 0:
+    return []
+
   articlelist_string = articlelist_matches[0]
-  
   # print "articlelist_string: ", articlelist_string
-  
   article_link_regex = getRegexMatcher('<a href="(.*?)"')
   article_title_regex = getRegexMatcher('target="_blank">(.*?)</a>&nbsp;')
   article_source_regex = getRegexMatcher('<span>(.*?)&nbsp;')
@@ -107,7 +112,7 @@ def parseBaiduNewsHtml(html_string, keyword):
     title = article_title_matches[0]
     source = article_source_matches[0]
     time = article_time_matches[0]
-    print keyword, "|", link, "|", title, " | ", source, " | " , time
+    # print keyword.strip().encode("gb2312"),"|",link,"|",title,"|",source,"|",time
     del article_title_matches[0]
     del article_source_matches[0]
     del article_time_matches[0]
@@ -117,17 +122,36 @@ def parseBaiduNewsHtml(html_string, keyword):
   #print article_result_list
   return article_result_list
 
+def insertBaiduResult(keyword_id, result):
+  link = result[0]
+  curs.execute("SELECT id FROM t_keyword_activities WHERE link = %s", link)
+  if curs.fetchone() is None:
+    curs.execute("INSERT t_keyword_activities VALUES (null, %s, %s, %s, %s, 0, %s, %s)",
+                 [
+                   keyword_id,
+                   result[1].decode('GBK').encode('UTF-8'),
+                   "",
+                   result[0],
+                   result[2].decode('GBK').encode('UTF-8'),
+                   result[3]
+                  ])
+    conn.commit()
 
 def fetchBaiduNews(keyword):
   values = {"word" : "title:" + keyword}
-  # print "KEYWORD: ", keyword
   url = "http://news.baidu.com/ns?" + urllib.urlencode(values) + "&tn=newsfcu&from=news&cl=2&rn=3&ct=0"
   content = fetchOneUrl(url)
-  # DEAL WITH ERROR
-  parseBaiduNewsHtml(content, keyword)
-  
+  # TDOO: handle errors
+  return parseBaiduNewsHtml(content, keyword)
+
 
 if __name__ == "__main__":
-  f = open("list.txt")
-  for line in f:
-    fetchBaiduNews(line)
+#  f = open("list.txt")
+#  for line in f:
+  curs.execute("SELECT id, content_to_search FROM t_keywords")
+  for (line) in curs.fetchall():
+    keyword = line[1]
+    result_list = fetchBaiduNews(keyword)
+    for result in result_list:
+      insertBaiduResult(line[0], result)
+    
