@@ -1,2 +1,0 @@
-KEYWORD=万科
-PLATFORM.MEIHUA=peggy_peng:123456

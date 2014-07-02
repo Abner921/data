@@ -108,21 +108,6 @@ Common retry for category search:
 """
 
 
-# drafts
-productListSiteInfo = {
-  'url' : "http://membercenter.made-in-china.com/product.do?xcase=list",
-  'pattern' : '/product.do?xcase=view&amp;prodId='
-}
-productListSiteInfoEcvv = {
-  'url' : "http://www.ecvv.com/myecvv/product/manage_product.html"
-}
-checkProductName = {
-  'url' : "http://membercenter.made-in-china.com/product.do",
-  'xcase' : 'checkUniqueProdName',
-  'prodName' : "",
-  'prodId' : ''
-}
-
-ADD_PRODUCT_OPERATIONS = {
-  'MEIHUA' : MEIHUA_ACTIONS
+ALL_OPERATIONS = {
+  'MEIHUA' : MEIHUA_ACTIONS,
 }

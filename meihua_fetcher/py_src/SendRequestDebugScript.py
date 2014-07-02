@@ -69,49 +69,6 @@ def find(content, actionInfo):
 print ".... Use actionInfo, response, request, printCookie, doRequest, getResponse ..."
 
 
-
-loginAction = {
-  'action_name': 'Login1 on manufacturer',
-  'url': 'http://my.manufacturer.com/jpc/signin.a?url=http%3A%2F%2Fwww.manufacturer.com%2Fbusiness%2Fmy%2Faccount.a%3Faction%3DView',
-  'data': { 'action': 'Login',
-            'password': '00ketai',
-            'referer': '',
-            'userName': 'jymeilun2012'},
-  'headers': { 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-               'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-               #'Accept-Encoding': 'gzip,deflate,sdch',
-               'Cache-Control': 'max-age=0',
-               'Connection': 'keep-alive',
-               'Content-Type': 'application/x-www-form-urlencoded',
-               'Host': 'my.manufacturer.com',
-               'Origin': 'http://my.manufacturer.com',
-               'Referer': 'http://my.manufacturer.com/jpc/signin.a?url=http%3A%2F%2Fwww.manufacturer.com%2Fbusiness%2Fmy%2Faccount.a%3Faction%3DView',
-               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11'},
-  'result': [ { 'output_key': 'manufacturer_ID',
-                'result_regex': '(.*)'}]
-}
-response = doRequest(loginAction)
-printCookie()
-
-
-manufacturerLogin2Action = {
-  'action_name': 'login2 manufacturer. unused',
-  'url': 'http://www.manufacturer.com/business/signon.a?action=Login&userName=jymeilun2012&remember=&serial=723029830&_rn=0.045414104824885728',
-  'headers': { 'Accept': '*/*',
-               'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-               'Accept-Encoding': 'gzip,deflate,sdch',
-               'Connection': 'keep-alive',
-               'Host': 'www.manufacturer.com',
-               'Referer': 'http://my.manufacturer.com/jpc/signin.a?url=http%3A%2F%2Fwww.manufacturer.com%2Fbusiness%2Fmy%2Faccount.a%3Faction%3DView',
-               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11'},
-  'result': [ { 'output_key': 'manufacturer_ID',
-                'result_regex': '(.*)'}]
-}
-
-response = doRequest(manufacturerLogin2Action)
-printCookie()
-
-
 actionInfo = {
   'action_name': 'view product list on manufacturer after login',
   'headers': { 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -126,12 +83,14 @@ actionInfo = {
   'url': 'http://www.manufacturer.com/business/my/account.a?action=View'
 }
 response = doRequest(actionInfo)
+printCookie()
 content = getResponse(response)
 #response = requestUrl("http://www.manufacturer.com/business/my/account.a?action=View")
 print content.find("Sign Out")
 
 
 
+# test regex:
 
 import re
 content = """
