@@ -1,9 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import MySQLdb
-import urllib
-import urllib2
-from datetime import datetime
 import baidu_news_fetcher
 import ftd_common
 
@@ -13,6 +10,14 @@ if __name__ == "__main__":
     keyword = line[1]
     result_list = baidu_news_fetcher.fetchBaiduNews(keyword)
     for result in result_list:
-      ftd_common.insert_activity({'keyword_id': line[0], "title": result[1].decode('GBK').encode('UTF-8'), "content": "", "link": result[0], "deleted": 0, "origin": result[2].decode('GBK').encode('UTF-8'), "creation_time": result[3]})
+      ftd_common.insert_activity({
+          'keyword_id': line[0],
+          "title": result[1].decode('GBK').encode('UTF-8'),
+          "content": "",
+          "link": result[0],
+          "deleted": 0,
+          "origin": result[2].decode('GBK').encode('UTF-8'),
+          "creation_time": result[3]
+      })
       
       

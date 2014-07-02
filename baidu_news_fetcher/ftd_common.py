@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import MySQLdb
-import urllib
-import urllib2
-from datetime import datetime
 
 conn = MySQLdb.connect(host='127.0.0.1', db='camera', user='root', passwd='', charset='utf8')
 curs = conn.cursor()

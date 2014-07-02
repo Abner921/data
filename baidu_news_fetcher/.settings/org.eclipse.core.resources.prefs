@@ -1,2 +1,5 @@
 eclipse.preferences.version=1
+encoding/baidu_fetcher_highfrequency.py=utf-8
+encoding/baidu_fetcher_normal.py=utf-8
 encoding/baidu_news_fetcher.py=utf-8
+encoding/ftd_common.py=utf-8
