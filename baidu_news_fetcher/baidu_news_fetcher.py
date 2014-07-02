@@ -8,7 +8,6 @@ import socket
 from urllib2 import Request, urlopen, URLError, HTTPError
 from Utility import Utility
 from ErrorCode import *
-import MySQLdb
 import sys
 
 TIMEOUTS = 50
@@ -21,9 +20,6 @@ socket.setdefaulttimeout(TIMEOUTS)
 cj = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 urllib2.install_opener(opener)
-
-conn = MySQLdb.connect(host='127.0.0.1', db='camera', user='root', passwd='', charset='utf8')
-curs = conn.cursor()
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -122,21 +118,6 @@ def parseBaiduNewsHtml(html_string, keyword):
   #print article_result_list
   return article_result_list
 
-def insertBaiduResult(keyword_id, result):
-  link = result[0]
-  curs.execute("SELECT id FROM t_keyword_activities WHERE link = %s", link)
-  if curs.fetchone() is None:
-    curs.execute("INSERT t_keyword_activities VALUES (null, %s, %s, %s, %s, 0, %s, %s)",
-                 [
-                   keyword_id,
-                   result[1].decode('GBK').encode('UTF-8'),
-                   "",
-                   result[0],
-                   result[2].decode('GBK').encode('UTF-8'),
-                   result[3]
-                  ])
-    conn.commit()
-
 def fetchBaiduNews(keyword):
   values = {"word" : "title:" + keyword}
   url = "http://news.baidu.com/ns?" + urllib.urlencode(values) + "&tn=newsfcu&from=news&cl=2&rn=3&ct=0"
@@ -144,14 +125,4 @@ def fetchBaiduNews(keyword):
   # TDOO: handle errors
   return parseBaiduNewsHtml(content, keyword)
 
-
-if __name__ == "__main__":
-#  f = open("list.txt")
-#  for line in f:
-  curs.execute("SELECT id, content_to_search FROM t_keywords")
-  for (line) in curs.fetchall():
-    keyword = line[1]
-    result_list = fetchBaiduNews(keyword)
-    for result in result_list:
-      insertBaiduResult(line[0], result)
     

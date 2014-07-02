@@ -3,9 +3,11 @@ import unittest
 from Utility import Utility
 from ErrorCode import ErrorCode
 from FallbackType import FallbackType
-from SendRequest import *
+from SingleActionProcessor import *
 
-class SendRequestTest(unittest.TestCase):
+class SingleActionProcessorTest(unittest.TestCase):
+  
+  sap = SingleActionProcessor()
   
   TEST_INPUT_INFO = {
     'USERNAME' : "user1",
@@ -81,21 +83,21 @@ class SendRequestTest(unittest.TestCase):
 
   def testGetEncodedUrl(self):
     self.assertEqual("http://url?param2=1&param1=test1",
-                     getEncodedUrl(self._actionInfo))
+                     self.sap.getEncodedUrl(self._actionInfo))
 
   def testFillFallbackDataForAction(self):
     self.assertEqual("keyword1 text1 text2", self._inputInfo["KEYWORD1"])
     self.assertEqual("keyword2 text1 text2", self._inputInfo["KEYWORD2"])
 
-    fillFallbackDataForAction(self._inputInfo, self._actionInfo)
+    self.sap.fillFallbackDataForAction(self._inputInfo, self._actionInfo)
     self.assertEqual("keyword1 text1", self._inputInfo["KEYWORD1"])
     self.assertEqual("all2", self._inputInfo["KEYWORD2"])
 
-    fillFallbackDataForAction(self._inputInfo, self._actionInfo)
+    self.sap.fillFallbackDataForAction(self._inputInfo, self._actionInfo)
     self.assertEqual("keyword1", self._inputInfo["KEYWORD1"])
     self.assertEqual("all2", self._inputInfo["KEYWORD2"])
 
-    fillFallbackDataForAction(self._inputInfo, self._actionInfo)
+    self.sap.fillFallbackDataForAction(self._inputInfo, self._actionInfo)
     self.assertEqual("all1", self._inputInfo["KEYWORD1"])
     self.assertEqual("all2", self._inputInfo["KEYWORD2"])
 
@@ -103,17 +105,17 @@ class SendRequestTest(unittest.TestCase):
   # Test that the "case_sensitive" field is used correctly
   def testMatchCaseSensitive(self):
     self.assertEquals("result1",
-                      matchActionResult(self._actionInfo["result"][0], None,
+                      self.sap.matchActionResult(self._actionInfo["result"][0], None,
                                         "contains result1 here", False))
     self.assertEquals(None,
-                      matchActionResult(self._actionInfo["result"][0], None,
+                      self.sap.matchActionResult(self._actionInfo["result"][0], None,
                                         "will not match RESULT1 here", False))
     
     self.assertEquals("result2",
-                      matchActionResult(self._actionInfo["result"][1], None,
+                      self.sap.matchActionResult(self._actionInfo["result"][1], None,
                                         "contains result2 here", False))
     self.assertEquals("RESULT2",
-                      matchActionResult(self._actionInfo["result"][1], None,
+                      self.sap.matchActionResult(self._actionInfo["result"][1], None,
                                         "match RESULT2 here", False))
 
 if __name__ == "__main__":
