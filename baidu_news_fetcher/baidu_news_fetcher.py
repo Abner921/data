@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys,urllib,urllib2,gzip,StringIO,io,cookielib,re,socket,time,os,traceback,copy
-from cookielib import CookieJar
-from threading import Thread
-import socket
-from urllib2 import Request, urlopen, URLError, HTTPError
+import sys,urllib,urllib2,gzip,StringIO,cookielib,re,socket,time
+from urllib2 import URLError, HTTPError
 from Utility import Utility
 from ErrorCode import *
-import sys
 
-TIMEOUTS = 50
+TIMEOUTS = 3
 utility = Utility()
 socket.setdefaulttimeout(TIMEOUTS)
 
