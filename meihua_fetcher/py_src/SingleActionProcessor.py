@@ -13,23 +13,30 @@ from pprint import pprint
 
 TIMEOUTS = 50
 socket.setdefaulttimeout(TIMEOUTS)
-# Note: Don't install_opener as a global opener for now, considering
-# timeouts. For each batch-send/fetch, we require one explicit login.
-# Also, we don't use Basic Auth Handler.
-cj = cookielib.CookieJar()
-opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-urllib2.install_opener(opener)
 utility = Utility()
 
 # Processor for one single action, for example, one post, one get, with one result check.
 class SingleActionProcessor:
+
+  cj = None
+
+  # Initialize the cookie / opener.
+  # It might NOT be thread safe, NOR can it support multiple action processor.
+  def __init__(self):
+    # Note: Don't install_opener as a global opener for now, considering
+    # timeouts. For each batch-send/fetch, we require one explicit login.
+    # Also, we don't use Basic Auth Handler.
+    self.cj = cookielib.CookieJar()
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
+    urllib2.install_opener(opener)
+
 
   def getEncodedUrl(self, actionInfo):
     if actionInfo.has_key("url_params") and actionInfo["url_params"]:
       return actionInfo["url"] + "?" + urllib.urlencode(actionInfo["url_params"])
     else:
       return actionInfo["url"]
-  
+
 
   def printActionRequestDebugInfo(self, shouldPrint, actionInfo, inputInfo, request):
     """ Only print, don't change the request / response
@@ -49,9 +56,10 @@ class SingleActionProcessor:
     utility.printMessage("========================= Response header", shouldPrint)
     utility.printDebug(response.headers, shouldPrint)
     utility.printMessage("", shouldPrint)
-    utility.printMessage("========================= ResponseContent: " + requestUrl, shouldPrint)
+    utility.printMessage("========================= Response Content: " + requestUrl, shouldPrint)
     utility.printDetails(content, shouldPrint)
-    utility.outputCookie(cj, "", shouldPrint)
+    utility.printMessage("========================= Response Cookie: " + requestUrl, shouldPrint)
+    utility.outputCookie(self.cj, "", shouldPrint)
   
   
   def getPayLoadData(self, actionInfo):
@@ -153,7 +161,7 @@ class SingleActionProcessor:
       pprint(vars(response), responseStringIO)
       responseStringIO.write("\n")
       pprint(vars(response.headers), responseStringIO)
-      responseObjectContent = responseStringIO.getvalue() + "\r\n" + utility.getCookieValues(cj)
+      responseObjectContent = responseStringIO.getvalue() + "\r\n" + utility.getCookieValues(self.cj)
       print "Response: ", responseObjectContent
       allMatches = redirect_regex.findall(responseObjectContent)
     else:
@@ -179,7 +187,7 @@ class SingleActionProcessor:
   
       return allMatches[0]
   
-  def processOneAction(self, actionOriginInfo, inputInfo, shouldPrint):
+  def processOneAction(self, inputInfo, actionOriginInfo, shouldPrint):
     actionInfo = copy.deepcopy(actionOriginInfo)
     utility.processSiteData(actionInfo, inputInfo)
   
@@ -211,25 +219,29 @@ class SingleActionProcessor:
       return self.processActionResult(actionInfo, response, content, inputInfo, shouldPrint)
   
     except HTTPError, e:
+      utility.printError(str(e))
       utility.printError('The server couldn\'t fulfill the request. Error code: ' + str(e.code))
       if actionInfo.has_key('error_strategy'):
         if actionInfo['error_strategy'] == "ALLOW_ERROR":
           return ErrorCode.ACTION_SUCCEED
       return ErrorCode.ACTION_RETRY_HTTP_ERROR
     except URLError, e:
+      utility.printError(str(e))
       utility.printError('We failed to reach a server. Reason: ' + str(e.reason))
       return ErrorCode.ACTION_RETRY_URL_ERROR
     except socket.timeout, e:
+      utility.printError(str(e))
       errno, errstr = sys.exc_info()[:2]
-      utility.printError("Socket Timeout (1): " + errno + ": " + errstr)
+      utility.printError("Socket Timeout (1): " + str(errno) + ": " + str(errstr))
       return ErrorCode.ACTION_RETRY_TIMEOUT
     except socket.error, e:
+      utility.printError(str(e))
       errno, errstr = sys.exc_info()[:2]
       if errno == socket.timeout:
-        utility.printError("Socket Timeout (2): " + errno + ": " + errstr)
+        utility.printError("Socket Timeout (2): " + str(errno) + ": " + str(errstr))
         return ErrorCode.ACTION_RETRY_TIMEOUT
       else:
-        utility.printError("Socket Error: " + errno + ": " + errstr)
+        utility.printError("Socket Error: " + str(errno) + ": " + str(errstr))
         return ErrorCode.ACTION_SOCKET_ERROR
   
   def shouldRetry(self, returnCode):
@@ -237,3 +249,95 @@ class SingleActionProcessor:
             returnCode == ErrorCode.ACTION_RETRY_TIMEOUT or
             returnCode == ErrorCode.ACTION_RETRY_HTTP_ERROR or
             returnCode == ErrorCode.ACTION_RETRY_URL_ERROR)
+
+  
+  """
+  Process one action with limited retry times depending on the retry / fallback logic.
+  The inputInfo will be changed for output purpose.
+  """
+  def processOneActionWithRetry(self, inputInfo, actionInfo, retryTimes = 3):
+    returnCode = self.processOneAction(inputInfo, actionInfo, inputInfo.has_key("DEBUG"))
+    backupData = self.backupFallbackDataForAction(inputInfo, actionInfo)
+    # Give it a couple retries for timeout or no-result-fallback.
+    # Should only rety for timeout, or unknown reason, or explicitly retry request.
+    # For login failure and other cases we should just fail fast.
+    while (self.shouldRetry(returnCode) and retryTimes > 0):
+      utility.printMessage("Retry for error: " + str(returnCode))
+  
+      # use the fallback data in input in case there is no result.
+      if returnCode == ErrorCode.ACTION_RETRY_NO_RESULT:
+        self.fillFallbackDataForAction(inputInfo, actionInfo)
+  
+      # else: no change on input and just retry for time out issues.
+      returnCode = self.processOneAction(actionInfo, inputInfo, inputInfo.has_key("DEBUG"))
+      retryTimes = retryTimes - 1
+  
+    if returnCode != ErrorCode.ACTION_SUCCEED:
+      # TODO: Prepare next_action handling logic, to allow condition and change of next action.
+      utility.printError("ERROR when performing action: " + actionInfo["action_name"])
+      utility.printError("      Subsequent actions are stopped.")
+  
+    self.restoreFallbackDataForAction(inputInfo, backupData)
+    return returnCode
+
+
+  """
+  Return an object with key/value pairs.
+  """
+  def backupFallbackDataForAction(self, inputInfo, actionInfo):
+    if 'retry_fallback' not in actionInfo:
+      return {}
+  
+    backupData = {}
+    for fallback in actionInfo['retry_fallback']:
+      key = fallback['data_key']
+      if not inputInfo.has_key(key):
+        utility.printError(
+            "No corresponding key in inputInfo to backup in the fallback data: " + key + ". Continued.",
+            inputInfo)
+      backupData[key] = inputInfo[key]
+    
+    return backupData
+  
+  """
+  Restore the values in backupData into inputInfo.
+  """
+  def restoreFallbackDataForAction(self, inputInfo, backupData):
+    if not backupData:
+      return
+  
+    for key in backupData:
+      inputInfo[key] = backupData[key]
+  
+    
+  # Return null if no substring.
+  # Doesn't support non-EN unicode yet.
+  def getSubstringForFallback(self, value):
+    return " ".join(value.replace("-", " ").replace("_", " ").split(" ")[:-1])
+  
+
+  def fillFallbackDataForAction(self, inputInfo, actionInfo):
+    if 'retry_fallback' not in actionInfo:
+      return
+  
+    for fallback in actionInfo['retry_fallback']:
+      key = fallback['data_key']
+      if not inputInfo.has_key(key):
+        utility.printError(
+            "No corresponding key in inputInfo to fill in the fallback data: " + key + ". Continued.",
+            inputInfo)
+      old_value = inputInfo[key]
+  
+      fallback_type = fallback['fallback_type']
+      fallback_value = ""
+      if 'data_value' in fallback:
+        fallback_value = fallback['data_value']
+      if fallback_type == FallbackType.REPLACE_WITH_SUBSTRING:
+        newValue = self.getSubstringForFallback(old_value)
+        if newValue:
+          fallback_value = newValue
+      # else FallbackType.REPLACE_WITH_FIXED_VALUE
+  
+      inputInfo[key] = fallback_value
+      utility.printMessage("Fallback the value " + key +
+                           " from " + old_value + " to " + fallback_value)
