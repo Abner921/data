@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import socket
 import MySQLdb
 import baidu_news_fetcher
 import ftd_common
 import time
+
+socket.setdefaulttimeout(3)
 
 if __name__ == "__main__":
   while 1:

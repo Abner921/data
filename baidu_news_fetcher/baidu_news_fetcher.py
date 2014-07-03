@@ -6,9 +6,7 @@ from urllib2 import URLError, HTTPError
 from Utility import Utility
 from ErrorCode import *
 
-TIMEOUTS = 3
 utility = Utility()
-socket.setdefaulttimeout(TIMEOUTS)
 
 # Note: Don't install_opener as a global opener for now, considering
 # timeouts. For each batch-send/fetch, we require one explicit login.
@@ -22,6 +20,7 @@ sys.setdefaultencoding('utf-8')
 
 def fetchOneUrl(requestUrl):
   requestHeaders = {}
+  content = ""
   request = urllib2.Request(
       url = requestUrl,
       headers = requestHeaders)
@@ -39,25 +38,25 @@ def fetchOneUrl(requestUrl):
 
   except HTTPError, e:
     utility.printError('The server couldn\'t fulfill the request. Error code: ' + str(e.code))
-    return ErrorCode.ACTION_RETRY_HTTP_ERROR
+    return (ErrorCode.ACTION_RETRY_HTTP_ERROR, str(e))
   except URLError, e:
     utility.printError('We failed to reach a server. Reason: ' + str(e.reason))
-    return ErrorCode.ACTION_RETRY_URL_ERROR
+    return (ErrorCode.ACTION_RETRY_URL_ERROR, str(e))
   except socket.timeout, e:
     errno, errstr = sys.exc_info()[:2]
-    utility.printError("Socket Timeout (1): " + errno + ": " + errstr)
-    return ErrorCode.ACTION_RETRY_TIMEOUT
+    utility.printError("Socket Timeout (1): " + str(errno) + ": " + str(errstr))
+    return (ErrorCode.ACTION_RETRY_TIMEOUT, str(e))
   except socket.error, e:
     errno, errstr = sys.exc_info()[:2]
     if errno == socket.timeout:
-      utility.printError("Socket Timeout (2): " + errno + ": " + errstr)
-      return ErrorCode.ACTION_RETRY_TIMEOUT
+      utility.printError("Socket Timeout (2): " + str(errno) + ": " + str(errstr))
+      return (ErrorCode.ACTION_RETRY_TIMEOUT, str(e))
     else:
-      utility.printError("Socket Error: " + errno + ": " + errstr)
-      return ErrorCode.ACTION_SOCKET_ERROR
+      utility.printError("Socket Error: " + str(errno) + ": " + str(errstr))
+      return (ErrorCode.ACTION_SOCKET_ERROR, str(e))
   
   # print content
-  return content
+  return (ErrorCode.ACTION_SUCCEED, content)
 
 
 def getRegexMatcher(regPattern):
@@ -117,8 +116,14 @@ def parseBaiduNewsHtml(html_string, keyword):
 def fetchBaiduNews(keyword):
   values = {"word" : "title:" + keyword}
   url = "http://news.baidu.com/ns?" + urllib.urlencode(values) + "&tn=newsfcu&from=news&cl=2&rn=3&ct=0"
-  content = fetchOneUrl(url)
-  # TDOO: handle errors
-  return parseBaiduNewsHtml(content, keyword)
-
+  
+  (result, content) = fetchOneUrl(url)
+  if result == ErrorCode.ACTION_SUCCEED:
+    news_results = parseBaiduNewsHtml(content, keyword)
+    if len(news_results) == 0:
+      print "Empty result for keyword: ", keyword, " url: ", url
+    return news_results
+  else:
+    print "Error for keyword: ", keyword, " error: ", str(result), " message: ", content
+    return []
     

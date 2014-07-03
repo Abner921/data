@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import MySQLdb
+#conn = MySQLdb.connect(host='114.215.200.214', db='fdd_direct', user='root', passwd='', charset='utf8', port=33306)
+conn = MySQLdb.connect(host='localhost', db='fdd_direct', user='root', passwd='password', charset='utf8')
 
-conn = MySQLdb.connect(host='127.0.0.1', db='camera', user='root', passwd='', charset='utf8')
+print "Database connected."
+
 curs = conn.cursor()
+testing = False
 
 def get_all_keywords():
   curs.execute("SELECT id, content_to_search FROM t_keywords")
@@ -16,7 +20,7 @@ def get_keywords_by_sql(sql):
 def insert_activity(result):
   link = result["link"]
   curs.execute("SELECT id FROM t_keyword_activities WHERE link = %s", link)
-  if curs.fetchone() is None:
+  if curs.fetchone() is None and not testing:
     curs.execute("INSERT t_keyword_activities VALUES (null, %s, %s, %s, %s, %s, %s, %s)",
                  [
                    result["keyword_id"],
