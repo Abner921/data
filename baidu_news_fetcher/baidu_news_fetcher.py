@@ -54,7 +54,10 @@ def fetchOneUrl(requestUrl):
     else:
       utility.printError("Socket Error: " + str(errno) + ": " + str(errstr))
       return (ErrorCode.ACTION_SOCKET_ERROR, str(e))
-  
+  except:
+    utility.printError("Unknown Error")
+    return (ErrorCode.ACTION_UNKNOWN_ERROR, "")
+
   # print content
   return (ErrorCode.ACTION_SUCCEED, content)
 
