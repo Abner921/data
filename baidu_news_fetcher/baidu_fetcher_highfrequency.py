@@ -13,10 +13,10 @@ if __name__ == "__main__":
   while 1:
     print "get keywords"
     lines = ftd_common.get_keywords_by_sql(
-    "SELECT t_keywords.id, t_keywords.content_to_search, count(t_keyword_activities.keyword_id) AS c FROM `t_keyword_activities` " + 
-    "JOIN t_keywords ON t_keywords.id = t_keyword_activities.keyword_id " + 
-    "GROUP BY t_keyword_activities.keyword_id ORDER BY `c`")
-    
+    "SELECT t_keywords.id, t_keywords.content_to_search, count(t_keyword_activities.keyword_id) AS c, t_keywords.search_count FROM t_keywords " + 
+    "LEFT JOIN `t_keyword_activities` ON t_keywords.id = t_keyword_activities.keyword_id " + 
+    "WHERE t_keywords.search_count < 10 GROUP BY t_keyword_activities.keyword_id, t_keywords.id ORDER BY `c`")
+
     for (line) in lines:
       print line[2]
       # fetch when we have less than 2 news
@@ -35,6 +35,7 @@ if __name__ == "__main__":
               "origin": result[2].decode('GBK').encode('UTF-8'),
               "creation_time": result[3]
           })
+        ftd_common.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (line[3] + 1, line[0]))
       else:
         print "cancel current loop"
         break
