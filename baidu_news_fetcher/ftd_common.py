@@ -17,6 +17,10 @@ def get_keywords_by_sql(sql):
   curs.execute(sql)
   return curs.fetchall()
 
+def update_by_sql(sql):
+  curs.execute(sql)
+  conn.commit()
+
 def insert_activity(result):
   link = result["link"]
   curs.execute("SELECT id FROM t_keyword_activities WHERE link = %s", link)
