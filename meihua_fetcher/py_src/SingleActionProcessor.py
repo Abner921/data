@@ -41,24 +41,25 @@ class SingleActionProcessor:
   def printActionRequestDebugInfo(self, shouldPrint, actionInfo, inputInfo, request):
     """ Only print, don't change the request / response
     """
-    utility.printMessage("========================= Action: " + actionInfo["action_name"], shouldPrint)
+    utility.printMessage("========= Action: " + actionInfo["action_name"], shouldPrint)
+    utility.printMessage(actionInfo, shouldPrint)
     requestUrl = self.getEncodedUrl(actionInfo)
     payLoadData = self.getPayLoadData(actionInfo)
-    utility.printMessage("========================= Request: " + requestUrl, shouldPrint)
+    utility.printMessage("========= Request: " + requestUrl, shouldPrint)
     utility.printDebug(request, shouldPrint)
     utility.printDetails(payLoadData, shouldPrint)
   
   
   def printActionResponseDebugInfo(self, shouldPrint, actionInfo, response, content):
     requestUrl = self.getEncodedUrl(actionInfo)
-    utility.printMessage("========================= Response: " + requestUrl , shouldPrint)
+    utility.printMessage("========= Response: " + requestUrl , shouldPrint)
     utility.printDebug(response, shouldPrint)
-    utility.printMessage("========================= Response header", shouldPrint)
+    utility.printMessage("========= Response header", shouldPrint)
     utility.printDebug(response.headers, shouldPrint)
     utility.printMessage("", shouldPrint)
-    utility.printMessage("========================= Response Content: " + requestUrl, shouldPrint)
+    utility.printMessage("========= Response Content: " + requestUrl, shouldPrint)
     utility.printDetails(content, shouldPrint)
-    utility.printMessage("========================= Response Cookie: " + requestUrl, shouldPrint)
+    utility.printMessage("========= Response Cookie: " + requestUrl, shouldPrint)
     utility.outputCookie(self.cj, "", shouldPrint)
   
   
@@ -123,7 +124,7 @@ class SingleActionProcessor:
         else:
           inputInfo[resultActionInfo["output_key"]] = matchResult
         utility.printMessage(
-            "SUCCEED: " + actionInfo["action_name"] + " Result: " + inputInfo[resultActionInfo["output_key"]])
+            "========= SUCCEED: " + actionInfo["action_name"] + "\nResult: " + inputInfo[resultActionInfo["output_key"]])
   
     return ErrorCode.ACTION_SUCCEED
   
@@ -162,7 +163,6 @@ class SingleActionProcessor:
       responseStringIO.write("\n")
       pprint(vars(response.headers), responseStringIO)
       responseObjectContent = responseStringIO.getvalue() + "\r\n" + utility.getCookieValues(self.cj)
-      print "Response: ", responseObjectContent
       allMatches = redirect_regex.findall(responseObjectContent)
     else:
       result_regex = self.getRegexMatcher(resultActionInfo, resultActionInfo["result_regex"])
@@ -179,19 +179,19 @@ class SingleActionProcessor:
       return None
     else:
       if len(allMatches) > 1:
-        utility.printMessage("Response has multiple matches for result. Getting the first one: " + allMatches[0])
+        utility.printMessage("Response has multiple matches for result. Getting the first one: " + allMatches[0], shouldPrint)
         if checkRedirectUrl:
           utility.printMessage("Response Regex:" + resultActionInfo["response_regex"], shouldPrint)
         else:
-          utility.printMessage("Result Regex:" + resultActionInfo["result_regex"])
+          utility.printMessage("Result Regex:" + resultActionInfo["result_regex"], shouldPrint)
   
       return allMatches[0]
   
   def processOneAction(self, inputInfo, actionOriginInfo, shouldPrint):
     actionInfo = copy.deepcopy(actionOriginInfo)
     utility.processSiteData(actionInfo, inputInfo)
-  
-    utility.printMessage("Start: " + actionInfo["action_name"])
+
+    utility.printMessage("========= Start: " + actionInfo["action_name"])
     if actionInfo.has_key("type") and actionInfo["type"] == "ADD_IMAGE":
       if not inputInfo.has_key("PRODUCT_IMAGE_FILE_PATH") or not inputInfo["PRODUCT_IMAGE_FILE_PATH"]:
         utility.printMessage("Skip image request as no image is uploaded")
@@ -208,7 +208,7 @@ class SingleActionProcessor:
     try:
       response = urllib2.urlopen(request)
       if response.info().get('Content-Encoding') and response.info().get('Content-Encoding').find('gzip') >= 0:
-        utility.printMessage('gzip enabled: suggest to remove the Content-Encoding setting!')
+        utility.printMessage('gzip enabled: suggest to remove the Content-Encoding setting!', shouldPrint)
         buf = StringIO.StringIO(response.read())
         gzipFile = gzip.GzipFile(fileobj=buf)
         content = gzipFile.read()
@@ -269,7 +269,7 @@ class SingleActionProcessor:
         self.fillFallbackDataForAction(inputInfo, actionInfo)
   
       # else: no change on input and just retry for time out issues.
-      returnCode = self.processOneAction(actionInfo, inputInfo, inputInfo.has_key("DEBUG"))
+      returnCode = self.processOneAction(inputInfo, actionInfo, inputInfo.has_key("DEBUG"))
       retryTimes = retryTimes - 1
   
     if returnCode != ErrorCode.ACTION_SUCCEED:

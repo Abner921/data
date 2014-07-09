@@ -12,21 +12,35 @@ from SingleActionProcessor import *
 from SiteData import *
 from ErrorCode import *
 from SiteDataMeihua import *
+from MeihuaKeywordLoader import *
+from MeihuaDataParser import *
+from MeihuaAdType import *
+from MeihuaDataWriter import *
 
-request_info_loader = RequestInfoLoader(utility)
+requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
 utility = Utility()
+parser = MeihuaDataParser()
+writer = MeihuaDataWriter()
+useLocalDb = False
+printCreateSql = False
+insertRecordToSql = not printCreateSql
+useBrandNameAsKeyword = True  # otherwise use content_to_search
+dbDryRunMode = False
+outputCrawlerDebugInfo = False
 
-def runMeihuaPipeline(keywordList):
+def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
   try:
     productFileName = "meihua_config.txt"
     # Return False if failed, or True if done.
     productRequestFilePath = utility.getProductRequestFilePath(productFileName)
-    (siteInfo, inputInfo) = request_info_loader.loadAddProductRequestFromFile(productRequestFilePath)
+    (siteInfo, inputInfo) = requestInfoLoader.loadAddProductRequestFromFile(productRequestFilePath)
     utility.preFillInput(inputInfo)
     
     inputInfo["USERNAME"] = siteInfo["LOGIN"]["MEIHUA"]["USERNAME"]
     inputInfo["PASSWORD"] = siteInfo["LOGIN"]["MEIHUA"]["PASSWORD"]
+	if outputCrawlerDebugInfo:
+	   inputInfo["DEBUG"] = 1
 
     returnCode = actionProcessor.processOneActionWithRetry(inputInfo, MeihuaLogin1Action)
     if returnCode != ErrorCode.ACTION_SUCCEED:
@@ -48,23 +62,60 @@ def runMeihuaPipeline(keywordList):
       return returnCode
     """
     
+    createSqls = []
+    
     # Start to fill in the keyword and search:
     for keyword in keywordList:
-      searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
-      utility.processSiteData(searchCookieAction, {'KEYWORD' : keyword})
-      returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
-      if returnCode != ErrorCode.ACTION_SUCCEED:
-        utility.printError("Get cookie request failed for keyword: " +
-                           keyword + " errorcode: " + str(returnCode))
-        continue
+#      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
+      keywordId = keyword[0]
+      if useBrandNameAsKeyword:
+        keyword = keyword[1].encode('UTF-8')
+      else:
+        keyword = keyword[2].encode('UTF-8')
+      for adType in typeList:
+        print "================== ADTYPE : ", adType, " kwd: ", keyword
+        
+        crawlParameters = {
+            'KEYWORD' : keyword,
+            'START_DATE' : startDate,
+            'END_DATE' : endDate,
+            'AD_TYPE' : adType
+        }
+        
+        searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
+        utility.processSiteData(searchCookieAction, crawlParameters)
+        returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
+        if returnCode != ErrorCode.ACTION_SUCCEED:
+          utility.printError("Get cookie request failed for keyword: " +
+                             keyword + " errorcode: " + str(returnCode))
+          continue
+        
+        listAllAction = copy.deepcopy(MeihuaListAllAction)
+        utility.processSiteData(listAllAction, crawlParameters)
+        returnCode = actionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
+        
+        if returnCode != ErrorCode.ACTION_SUCCEED:
+          utility.printError("Get search result request failed for keyword: " +
+                             keyword + " errorcode: " + str(returnCode))
+          continue
       
-      returnCode = actionProcessor.processOneActionWithRetry(inputInfo, MeihuaListAllAction)
+        # Parse the data:
+        allAdContent = inputInfo["MEIHUA_SEARCH_RESULT"]
+        results = parser.parseData(allAdContent)
+        
+        if len(results) > 0 and printCreateSql:
+          createSql = writer.getCreateTableSql(results, adType)
+          createSqls.append(createSql)
+          createSqls.append("")
+        
+        if insertRecordToSql:
+          for result in results:
+            # utility.printMessage(results)
+            writer.insertToTable(dbLayer, keywordId, [result], adType)
+            pass
 
-      if returnCode != ErrorCode.ACTION_SUCCEED:
-        utility.printError("Get search result request failed for keyword: " +
-                           keyword + " errorcode: " + str(returnCode))
-        continue
-      
+    print "\n".join(createSqls)
+    
   except Exception, e:
     # utility.printError("Un-catched Exceptions when processing request: " +  productFileName, e)
     utility.printError("This request is marked as failed.", e)
@@ -80,10 +131,27 @@ def runMeihuaPipeline(keywordList):
 
 
 if __name__ == "__main__":
-  runMeihuaPipeline(["万科 "])
+  dbLayer = DatabaseLayer()
+  if useLocalDb:
+    dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
+  else:
+    dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd='zhitou', dbport=33306)
+  dbLayer.setDryRun(dbDryRunMode)
+  
+  loader = MeihuaKeywordLoader()
+  
+  if printCreateSql:
+    # Use a common keyword to get all schema
+    keywords = [[0, u"万科", u"万科"]]
+  else:
+    keywords = loader.getAllKeywords(dbLayer)
+  
+  runMeihuaPipeline(dbLayer, keywords, "2014-06-01", "2014-07-08",
+                    [
+                      MeihuaAdType.MAGAZINE,
+                      MeihuaAdType.OUTDOOR,
+                      MeihuaAdType.ONLINE,
+                      MeihuaAdType.RADIO
+                    ])
 
-
-#productInput = utility.loadProductFromFile(
-#    utility.getConfigureFilePath("test_product.txt"))
-#processOneAction(ec21LoginAction, productInput, True)
-#processOneAction(ec21SearchCategoryAction, productInput, True)
+  dbLayer.close()

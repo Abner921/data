@@ -1,4 +1,8 @@
 eclipse.preferences.version=1
+encoding//py_src/DatabaseLayer.py=utf-8
+encoding//py_src/MeihuaAdType.py=utf-8
 encoding//py_src/MeihuaDataParser.py=utf-8
+encoding//py_src/MeihuaDataWriter.py=utf-8
+encoding//py_src/MeihuaKeywordLoader.py=utf-8
 encoding//py_src/MeihuaPipelineMain.py=utf-8
 encoding//py_src/SiteDataMeihua.py=utf-8
