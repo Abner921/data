@@ -3,6 +3,11 @@
 from pprint import pprint
 import os, re, sys, datetime, StringIO, time, calendar
 
+
+def enum(**enums):
+    return type('Enum', (), enums)
+
+
 class Utility:
   """Utils to load file / print debug
   """
@@ -17,7 +22,8 @@ class Utility:
   detailLogStream = StringIO.StringIO()
   # the stream for final user facing error message file.
   errorContentStream = StringIO.StringIO()
-  
+
+
   def saveLogFile(self, productFileName):
     # filename contains full path
     print " =======  saveLogFile", productFileName
@@ -205,9 +211,7 @@ class Utility:
 
     if is_string:
       macro_key = self.__STRING_KEY_BEGIN__ + key + self.__STRING_KEY_END__
-      #new_value = value.replace(macro_key, input_value)
-      #f = open('/Users/yiling/workspace/BtoolPostProd/debug_1', 'w')
-      #f.write(new_value)
+      # print "---------- value: ", value, " macro: ", macro_key, " input_value: ", input_value 
       return value.replace(macro_key, input_value)
     else:
       return input_value

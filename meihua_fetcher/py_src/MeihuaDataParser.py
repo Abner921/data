@@ -2,11 +2,6 @@
 # coding=utf-8
 
 import os,sys,time
-from datetime import date, timedelta
-from fetcher.data_fetcher import DataFetcher
-from fetcher.utility import Utility
-import MySQLdb
-import importlib
 from xml.dom import minidom
 
 """
@@ -56,7 +51,7 @@ class MeihuaDataParser:
 
   def parseData(self, xml_content):
     all_items = []
-    dom = minidom.parse(xml_content)
+    dom = minidom.parseString("<root>" + xml_content + "</root>")
     for node in dom.getElementsByTagName('Item'):
       # get all key value pair
       one_item = {}
@@ -67,6 +62,7 @@ class MeihuaDataParser:
           text = subchild.nodeValue
           one_item[child.nodeName] = text          
       all_items.append(one_item)
-  
+
     return all_items
+  
   
