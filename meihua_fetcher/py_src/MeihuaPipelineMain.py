@@ -23,7 +23,7 @@ utility = Utility()
 parser = MeihuaDataParser()
 writer = MeihuaDataWriter()
 useLocalDb = False
-printCreateSql = False
+printCreateSql = True
 insertRecordToSql = not printCreateSql
 useBrandNameAsKeyword = True  # otherwise use content_to_search
 dbDryRunMode = False
@@ -63,7 +63,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
       return returnCode
     """
     
-    createSqls = []
+    createSqls = [writer.getCreateSchemaTableSql()]
     
     # Start to fill in the keyword and search:
     for keyword in keywordList:

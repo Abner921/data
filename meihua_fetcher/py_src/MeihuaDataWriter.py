@@ -6,35 +6,68 @@ from DatabaseLayer import *
 
 class MeihuaDataWriter:
   
+  # List all the hidden columns here.
+  MeihuaAdHiddenColumnSet = ["ID"]
+  
   def isNumberValue(self, key):
     return key.find("ID") >= 0 or key.find("Id") >= 0 or key == "Repeat" or key == "BrandCode"
   
   def getCreateTableSql(self, results, adtype):
     #pprint(result)
     columns = []
+    # no keyword id
+    insertColumnTemplate = (
+        "    INSERT INTO t_meihua_ad_columns " +
+        "VALUES({{AD_TYPE_ID}}, 't_meihua_ad_{{AD_TYPE}}', '{{COLUMN_NAME}}', {{VISIBLE_ON_UI}});")
+    insertColumnTemplate = insertColumnTemplate.replace("{{AD_TYPE}}", MeihuaAdTypeNameMap[adtype])
+    insertColumnTemplate = insertColumnTemplate.replace("{{AD_TYPE_ID}}", adtype)
+    
+    insertColumnSqls = []
     for key in results[0].keys():
       keyName = "`" + key + "`"
+      visibleOnUI = 1- self.MeihuaAdHiddenColumnSet.count(key)
+      insertColumnSqls.append(
+          insertColumnTemplate.replace("{{COLUMN_NAME}}", key)
+                              .replace("{{VISIBLE_ON_UI}}", str(visibleOnUI)))
+      
       if key.endswith("Time") and key != "VideoTime":
         columns.append(keyName + " date NOT NULL")
       elif self.isNumberValue(key):
         columns.append(keyName + " int")
-      elif key.find("Graphic") >= 0 or key.find("Picture") >= 0 or key.find("Url") >= 0 or key.find("Description") >= 0:
+      elif (key.find("Graphic") >= 0 or key.find("Picture") >= 0 or
+            key.find("Url") >= 0 or key.find("Description") >= 0):
         columns.append(keyName + " text")
       else:
         columns.append(keyName + " varchar(255)")
     
     createTableSql = """
-    DROP TABLE t_meihua_ad_{{AD_TYPE}};
-    CREATE TABLE t_meihua_ad_{{AD_TYPE}} (
+    DROP TABLE IF EXISTS t_meihua_ad_{{AD_TYPE}};
+    CREATE TABLE IF NOT EXISTS t_meihua_ad_{{AD_TYPE}} (
         KeywordId int,
         CreationTime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         {{OTHER_COLUMNS}}
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
     ALTER TABLE t_meihua_ad_{{AD_TYPE}} ADD PRIMARY KEY ( `ID` ) ;
+
     """
     createTableSql = createTableSql.replace("{{AD_TYPE}}", MeihuaAdTypeNameMap[adtype])
     createTableSql = createTableSql.replace("{{OTHER_COLUMNS}}", ",\n        ".join(columns))
+    createTableSql += "\n"
+    createTableSql += "\n".join(insertColumnSqls)
     return createTableSql
+  
+  def getCreateSchemaTableSql(self):
+    createSchemaTableSql = """
+    DROP TABLE IF EXISTS t_meihua_ad_columns;
+    CREATE TABLE IF NOT EXISTS t_meihua_ad_columns (
+        ad_type int,
+        table_name varchar(255),
+        column_name varchar(255),
+        VISIBLE_ON_UI tinyint(1),
+        KEY `ad_type` (`ad_type`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    """
+    return createSchemaTableSql
   
   def getCellValueForSql(self, value, key):
     if self.isNumberValue(key):
@@ -75,7 +108,6 @@ class MeihuaDataWriter:
     insertSql = insertSql.replace("{{COLUMN_LIST}}", ", ".join(keyNames))
     insertSql = insertSql.replace("{{VALUE_LIST}}", sqlFormaters)
     return insertSql
-
 
   def insertToTable(self, layer, keywordId, results, adtype):
     (keysList, valuesList) = self.getInsertTableKeyValues(keywordId, results, results[0].keys())
