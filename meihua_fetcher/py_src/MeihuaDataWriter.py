@@ -25,7 +25,7 @@ class MeihuaDataWriter:
     insertColumnSqls = []
     for key in results[0].keys():
       keyName = "`" + key + "`"
-      visibleOnUI = 1- self.MeihuaAdHiddenColumnSet.count(key)
+      visibleOnUI = 1 - self.MeihuaAdHiddenColumnSet.count(key)
       insertColumnSqls.append(
           insertColumnTemplate.replace("{{COLUMN_NAME}}", key)
                               .replace("{{VISIBLE_ON_UI}}", str(visibleOnUI)))
@@ -63,7 +63,7 @@ class MeihuaDataWriter:
         ad_type int,
         table_name varchar(255),
         column_name varchar(255),
-        VISIBLE_ON_UI tinyint(1),
+        visible_on_ui tinyint(1),
         KEY `ad_type` (`ad_type`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     """
