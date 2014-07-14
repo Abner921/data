@@ -22,16 +22,17 @@ class DatabaseLayer:
             self.cursor.execute("SELECT VERSION ()")
 
             data = self.cursor.fetchone()
+            print("Database version : % s " %  data)
 
             if autocommit:
                 self.conn.autocommit(True)
             else:
                 self.conn.autocommit(False)
+            return True
 
         except mdb.Error as e:
             print("Connect Error % d: % s" % (e.args[0], e.args[1]))
-
-        print("Database version : % s " %  data)
+            return False
 
 
     def close(self):
@@ -43,14 +44,16 @@ class DatabaseLayer:
 
 
     # Execute and commit. No need to rollback.
-    def excute(self, sql = "", many = False, commit = True):
+    def excute(self, sql, valuesList = [], commit = True):
         if self.isDryRun:
             print("DRY RUN SQL: ", sql)
             return True
           
         try:
-            if many:
-                self.cursor.executemany(sql)
+            if len(valuesList) > 1:
+                self.cursor.executemany(sql, valuesList)
+            elif len(valuesList) == 1:
+                self.cursor.execute(sql, valuesList[0])
             else:
                 self.cursor.execute(sql)
 

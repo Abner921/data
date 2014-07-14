@@ -39,8 +39,9 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
     
     inputInfo["USERNAME"] = siteInfo["LOGIN"]["MEIHUA"]["USERNAME"]
     inputInfo["PASSWORD"] = siteInfo["LOGIN"]["MEIHUA"]["PASSWORD"]
-	if outputCrawlerDebugInfo:
-	   inputInfo["DEBUG"] = 1
+    
+    if outputCrawlerDebugInfo:
+      inputInfo["DEBUG"] = 1
 
     returnCode = actionProcessor.processOneActionWithRetry(inputInfo, MeihuaLogin1Action)
     if returnCode != ErrorCode.ACTION_SUCCEED:
@@ -103,16 +104,14 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
         allAdContent = inputInfo["MEIHUA_SEARCH_RESULT"]
         results = parser.parseData(allAdContent)
         
-        if len(results) > 0 and printCreateSql:
+        if printCreateSql and len(results) > 0:
           createSql = writer.getCreateTableSql(results, adType)
           createSqls.append(createSql)
           createSqls.append("")
         
-        if insertRecordToSql:
-          for result in results:
-            # utility.printMessage(results)
-            writer.insertToTable(dbLayer, keywordId, [result], adType)
-            pass
+        if insertRecordToSql and len(results) > 0:
+          print "Inserting ", len(results), " records."
+          writer.insertToTable(dbLayer, keywordId, results, adType)
 
     print "\n".join(createSqls)
     
@@ -132,21 +131,23 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
 
 if __name__ == "__main__":
   dbLayer = DatabaseLayer()
-  if useLocalDb:
-    dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
-  else:
-    dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd='zhitou', dbport=33306)
   dbLayer.setDryRun(dbDryRunMode)
+  if useLocalDb:
+    result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
+  else:
+    result = dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd='', dbport=33306)
+
+  if not result:
+    exit(1)
   
   loader = MeihuaKeywordLoader()
-  
   if printCreateSql:
     # Use a common keyword to get all schema
     keywords = [[0, u"万科", u"万科"]]
   else:
     keywords = loader.getAllKeywords(dbLayer)
   
-  runMeihuaPipeline(dbLayer, keywords, "2014-06-01", "2014-07-08",
+  runMeihuaPipeline(dbLayer, keywords, "2014-01-01", "2014-07-14",
                     [
                       MeihuaAdType.MAGAZINE,
                       MeihuaAdType.OUTDOOR,
