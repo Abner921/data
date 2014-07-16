@@ -155,6 +155,8 @@ class SingleActionProcessor:
   def matchActionResult(self, resultActionInfo, response, content, shouldPrint):
     checkRedirectUrl = resultActionInfo.has_key("response_regex")
     allMatches = None
+    responseObjectContent = ""
+
     if checkRedirectUrl:
       # for the case when it is a 302 with redirect url when succeed
       redirect_regex = self.getRegexMatcher(resultActionInfo, resultActionInfo["response_regex"])
@@ -171,11 +173,10 @@ class SingleActionProcessor:
     if len(allMatches) < 1:
       if checkRedirectUrl:
         utility.printError("Response has no matches for response regex: "
-                           + resultActionInfo["response_regex"])
+                           + resultActionInfo["response_regex"] + " Content: " + responseObjectContent)
       else:
         utility.printError("Response has no matches for result regex: "
-                           + resultActionInfo["result_regex"])
-      #utility.printMessage(content, shouldPrint)
+                           + resultActionInfo["result_regex"] + " Content: " +  content)
       return None
     else:
       if len(allMatches) > 1:
