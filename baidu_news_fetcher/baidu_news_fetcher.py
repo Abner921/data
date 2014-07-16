@@ -5,6 +5,7 @@ import sys,urllib,urllib2,gzip,StringIO,cookielib,re,socket,time
 from urllib2 import URLError, HTTPError
 from Utility import Utility
 from ErrorCode import *
+from baidu_news_parser import *
 
 utility = Utility()
 
@@ -14,6 +15,7 @@ utility = Utility()
 cj = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 urllib2.install_opener(opener)
+parser = BaiduNewsParser()
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -62,67 +64,37 @@ def fetchOneUrl(requestUrl):
   return (ErrorCode.ACTION_SUCCEED, content)
 
 
-def getRegexMatcher(regPattern):
-  """
+# newsFeedType: "news", "newsfcu", "newsfc". This can affect crawlling efficiency.
+def fetchBaiduNews(keyword, number = "20", isOnlySearchInTitle = False, isSortByTime = True, newsFeedType = "news"):
+  if isOnlySearchInTitle:
+    keyword = "title:" + keyword
+
+  if isSortByTime:
+    ctValue = "0"
+  else:
+    ctValue = "1"
   
-  Note:
-  re.S:.match any char including newline
-  re.M:^$ match each line instead of the first line.
-  >>> re.findall(r"^a(\d+)b", "a23b\na34b", re.M)
-          ['23', '34']
-  """
-  caseSensitive = True
-  matchMultiline = False
-  regex_flag = 0
-  if not caseSensitive:
-    regex_flag = re.IGNORECASE
-  if matchMultiline:
-    regex_flag = regex_flag | re.S
-
-  return re.compile(regPattern, regex_flag)
-
-
-def parseBaiduNewsHtml(html_string, keyword):
-  articlelist_regex = getRegexMatcher('class=baidu>.*?<div')
-  articlelist_matches = articlelist_regex.findall(html_string)
-
-  if len(articlelist_matches) == 0:
-    return []
-
-  articlelist_string = articlelist_matches[0]
-  # print "articlelist_string: ", articlelist_string
-  article_link_regex = getRegexMatcher('<a href="(.*?)"')
-  article_title_regex = getRegexMatcher('target="_blank">(.*?)</a>&nbsp;')
-  article_source_regex = getRegexMatcher('<span>(.*?)&nbsp;')
-  article_time_regex = getRegexMatcher('<span>.*?&nbsp;(.*?)</span><br>')
-
-  article_link_matches = article_link_regex.findall(articlelist_string)
-  article_title_matches = article_title_regex.findall(articlelist_string)
-  article_source_matches = article_source_regex.findall(articlelist_string)
-  article_time_matches = article_time_regex.findall(articlelist_string)
+  startIndex = 0;
   
-  article_result_list = []
-  for link in article_link_matches:
-    title = article_title_matches[0]
-    source = article_source_matches[0]
-    time = article_time_matches[0]
-    # print keyword.strip().encode("gb2312"),"|",link,"|",title,"|",source,"|",time
-    del article_title_matches[0]
-    del article_source_matches[0]
-    del article_time_matches[0]
-    
-    article_result_list.append([link, title, source, time])
+  # cl = 2: no duplication
+  # ct = 0：sort by time, ct = 1: sort by relevance
+  # tn = nesfcu, news, newsdy
+  # rn = 50: records per page
+  values = {
+    "cl" : "2",
+    "ct" : ctValue,
+    "from" : "news",
+    "pn" : str(startIndex),
+    "rn" : str(number),
+    "tn" : newsFeedType,
+    "word" : keyword
+  }
 
-  #print article_result_list
-  return article_result_list
-
-def fetchBaiduNews(keyword):
-  values = {"word" : "title:" + keyword}
-  url = "http://news.baidu.com/ns?" + urllib.urlencode(values) + "&tn=newsfcu&from=news&cl=2&rn=3&ct=0"
+  url = "http://news.baidu.com/ns?" + urllib.urlencode(values)
   
   (result, content) = fetchOneUrl(url)
   if result == ErrorCode.ACTION_SUCCEED:
-    news_results = parseBaiduNewsHtml(content, keyword)
+    news_results = parser.parseBaiduNewsHtml(content, newsFeedType)
     if len(news_results) == 0:
       print "Empty result for keyword: ", keyword, " url: ", url
     return news_results

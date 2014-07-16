@@ -21,19 +21,20 @@ def update_by_sql(sql):
   curs.execute(sql)
   conn.commit()
 
-def insert_activity(result):
+def insert_activity(keyword_id, result):
   link = result["link"]
   curs.execute("SELECT id FROM t_keyword_activities WHERE link = %s", link)
   if curs.fetchone() is None and not testing:
-    curs.execute("INSERT t_keyword_activities VALUES (null, %s, %s, %s, %s, %s, %s, %s)",
+    curs.execute("INSERT t_keyword_activities VALUES (null, %s, %s, %s, %s, %s, %s, %s, %s)",
                  [
-                   result["keyword_id"],
+                   keyword_id,
                    result["title"],
                    result["content"],
                    result["link"],
-                   result["deleted"],
+                   0,  # deleted
                    result["origin"],
-                   result["creation_time"]
+                   result["creation_time"],
+                   result["picture"]
                   ])
     conn.commit()
 
