@@ -14,12 +14,21 @@ def get_all_keywords():
   return curs.fetchall()
 
 def get_keywords_by_sql(sql):
-  curs.execute(sql)
-  return curs.fetchall()
+  conn2 = MySQLdb.connect(host='localhost', db='fdd_direct', user='root', passwd='password', charset='utf8')
+  curs2 = conn2.cursor()
+  curs2.execute(sql)
+  result = curs2.fetchall()
+  curs2.close()
+  conn2.close()
+  return result
 
 def update_by_sql(sql):
   curs.execute(sql)
   conn.commit()
+
+def close_conn():
+  curs.close()
+  conn.close()
 
 def insert_activity(keyword_id, result):
   link = result["link"]

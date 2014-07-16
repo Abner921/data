@@ -15,7 +15,7 @@ if __name__ == "__main__":
     lines = ftd_common.get_keywords_by_sql(
     "SELECT t_keywords.id, t_keywords.content_to_search, count(t_keyword_activities.keyword_id) AS c, t_keywords.search_count FROM t_keywords " + 
     "LEFT JOIN `t_keyword_activities` ON t_keywords.id = t_keyword_activities.keyword_id " + 
-    "WHERE t_keywords.search_count < 10 GROUP BY t_keyword_activities.keyword_id, t_keywords.id ORDER BY `c`")
+    "WHERE t_keywords.search_count = 0 GROUP BY t_keyword_activities.keyword_id, t_keywords.id ORDER BY `c`")
 
     for (line) in lines:
       print line[2]
