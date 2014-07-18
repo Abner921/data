@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys,urllib,urllib2,gzip,StringIO,io,cookielib,re,socket,time,os,traceback,copy
+import sys,urllib,urllib2,gzip,StringIO,io,cookielib,re,socket,time,os,traceback,copy,getopt
 from cookielib import CookieJar
 from threading import Thread
 import socket
@@ -23,13 +23,12 @@ utility = Utility()
 parser = MeihuaDataParser()
 writer = MeihuaDataWriter()
 useLocalDb = False
-printCreateSql = True
-insertRecordToSql = not printCreateSql
+printCreateSql = False
 useBrandNameAsKeyword = True  # otherwise use content_to_search
 dbDryRunMode = False
 outputCrawlerDebugInfo = False
 
-def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
+def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList):
   try:
     productFileName = "meihua_config.txt"
     # Return False if failed, or True if done.
@@ -80,7 +79,8 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
             'KEYWORD' : keyword,
             'START_DATE' : startDate,
             'END_DATE' : endDate,
-            'AD_TYPE' : adType
+            'AD_TYPE' : adType,
+            'NUMBER_AD' : number
         }
         
         searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
@@ -109,7 +109,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
           createSqls.append(createSql)
           createSqls.append("")
         
-        if insertRecordToSql and len(results) > 0:
+        if not printCreateSql and len(results) > 0:
           print "Inserting ", len(results), " records."
           writer.insertToTable(dbLayer, keywordId, results, adType)
 
@@ -130,12 +130,53 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, typeList):
 
 
 if __name__ == "__main__":
+  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:ctv",
+                             ["password=", "start_date=", "end_date=", "number=", "ad_types=",
+                              "create_mode", "testdb_mode", "verbose_mode"])
+  
+  # default values
+  start_date = datetime.datetime.now().strftime("%Y-%m-%d")
+  end_date= (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+  # MAGAZINE = "1", TV = "2", OUTDOOR = "3", ONLINE = "4", PROMOTION = "5", RADIO = "6"
+  ad_types = "1,2,3,4,5,6"
+  number = 100
+  password = ""
+
+  for op, value in opts:
+    if op == "-p" or op == "--password":
+      password = value
+    if op == "-s" or op == "--start_date":
+      start_date = value
+    elif op == "-e" or op == "--end_date":
+      end_date = value
+    elif op == "-n" or op == "--number":
+      number = value
+    elif op == "-a" or op == "--ad_types":
+      ad_types = value
+    elif op == "-c" or op == "--create_mode":
+      printCreateSql = True
+    elif op == "-t" or op == "--testdb_mode":
+      useLocalDb = True
+    elif op == "-v" or op == "--verbose_mode":
+      outputCrawlerDebugInfo = True
+    else:
+      print "Usage: "
+      print "MeihuaPipelineMain.py -s 2013-01-02 -e=2014-02-03 -a='1,2,3' -n=100 -t -c -v"
+      print "MeihuaPipelineMain.py --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
+      print "                      --number=100 --test_mode --create_mode --verbose_mode"
+      sys.exit()
+
+  print "Start: ", start_date
+  print "End: ", end_date
+  print "Number: ", number
+  print "Ad types: ", ad_types
+
   dbLayer = DatabaseLayer()
   dbLayer.setDryRun(dbDryRunMode)
   if useLocalDb:
     result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
   else:
-    result = dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd='', dbport=33306)
+    result = dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd=password, dbport=33306)
 
   if not result:
     exit(1)
@@ -146,13 +187,7 @@ if __name__ == "__main__":
     keywords = [[0, u"万科", u"万科"]]
   else:
     keywords = loader.getAllKeywords(dbLayer)
-  
-  runMeihuaPipeline(dbLayer, keywords, "2014-01-01", "2014-07-14",
-                    [
-                      MeihuaAdType.MAGAZINE,
-                      MeihuaAdType.OUTDOOR,
-                      MeihuaAdType.ONLINE,
-                      MeihuaAdType.RADIO
-                    ])
+
+  runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number, ad_types.split(","))
 
   dbLayer.close()

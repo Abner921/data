@@ -206,7 +206,7 @@ adType:
 MeihuaListAllAction = {
   'action_name': 'MeihuaListAll',
   'url_params': { 'adType': '%==>AD_TYPE<==%',
-            'ps': '100',
+            'ps': '%==>NUMBER_AD<==%',
             'st': '1',
             'sa': '1',
             'sDate': '%==>START_DATE<==%',
