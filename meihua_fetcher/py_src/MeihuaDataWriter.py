@@ -114,7 +114,10 @@ class MeihuaDataWriter:
     sql = self.getInsertTableSql(keysList, adtype)
     print "===== Inserting: ", sql
     print "===== Values: ", valuesList
-    layer.excute(sql, valuesList, True)
+    try:
+      layer.excute(sql, valuesList, True)
+    except Exception, ex:
+      print "Should never reach here. Exception: ", ex
 
 
 """

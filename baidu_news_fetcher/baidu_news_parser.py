@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import re
+# to use escape / unescape
+from xml.sax.saxutils import *
 
 class BaiduNewsParser:
 
@@ -102,12 +104,12 @@ class BaiduNewsParser:
         print "summary: ", summary
 
         article_result_list.append({
-          "link": link,
-          "title": title.encode('UTF-8'),
-          "origin": origin.encode('UTF-8'),
+          "link": unescape(link),
+          "title": unescape(title).encode('UTF-8'),
+          "origin": unescape(origin).encode('UTF-8'),
           "creation_time": time,
-          "picture": picture,
-          "content": summary.encode('UTF-8')
+          "picture": unescape(picture),
+          "content": unescape(summary).encode('UTF-8')
         })
   
     print article_result_list

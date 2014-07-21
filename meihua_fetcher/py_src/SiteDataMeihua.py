@@ -206,7 +206,7 @@ adType:
 MeihuaListAllAction = {
   'action_name': 'MeihuaListAll',
   'url_params': { 'adType': '%==>AD_TYPE<==%',
-            'ps': '10',
+            'ps': '%==>NUMBER_AD<==%',
             'st': '1',
             'sa': '1',
             'sDate': '%==>START_DATE<==%',
@@ -223,7 +223,9 @@ MeihuaListAllAction = {
                'Referer': 'http://adm.meihua.info/ListView.aspx?adType=0&keyStr=%==>KEYWORD<==%',
                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11'},
   'result': [ { 'output_key': 'MEIHUA_SEARCH_RESULT',
-                'result_regex': '<MeihuaNet>(.*)</MeihuaNet>'}],
+                'result_regex': '<MeihuaNet>(.*?)</MeihuaNet>',
+                'match_multiline' : True
+              }],
   'error_handling' : [{
     'error_regex' : ".*",
     'error_message' : "No search result found.",
