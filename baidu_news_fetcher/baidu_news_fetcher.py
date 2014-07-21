@@ -65,7 +65,7 @@ def fetchOneUrl(requestUrl):
 
 
 # newsFeedType: "news", "newsfcu", "newsfc". This can affect crawlling efficiency.
-def fetchBaiduNews(keyword, number = "20", isOnlySearchInTitle = False, isSortByTime = True, newsFeedType = "news"):
+def fetchBaiduNews(keyword, number = "20", isOnlySearchInTitle = True, isSortByTime = True, newsFeedType = "news"):
   if isOnlySearchInTitle:
     keyword = "title:" + keyword
 
