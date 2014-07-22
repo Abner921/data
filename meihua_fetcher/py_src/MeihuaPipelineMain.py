@@ -145,7 +145,7 @@ if __name__ == "__main__":
   for op, value in opts:
     if op == "-p" or op == "--password":
       password = value
-    if op == "-s" or op == "--start_date":
+    elif op == "-s" or op == "--start_date":
       start_date = value
     elif op == "-e" or op == "--end_date":
       end_date = value
@@ -161,8 +161,8 @@ if __name__ == "__main__":
       outputCrawlerDebugInfo = True
     else:
       print "Usage: "
-      print "MeihuaPipelineMain.py -s 2013-01-02 -e=2014-02-03 -a='1,2,3' -n=100 -t -c -v"
-      print "MeihuaPipelineMain.py --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
+      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e=2014-02-03 -a=1,2,3 -n=100 -t -c -v"
+      print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
       print "                      --number=100 --test_mode --create_mode --verbose_mode"
       sys.exit()
 
