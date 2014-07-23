@@ -3,6 +3,7 @@
 
 import os,sys,time
 from xml.dom import minidom
+from urllib import unquote
 
 """
 <MeihuaNet>
@@ -60,7 +61,10 @@ class MeihuaDataParser:
         if (len(child.childNodes) > 0):
           subchild = child.childNodes[0]
           text = subchild.nodeValue
-          one_item[child.nodeName] = text          
+          one_item[child.nodeName] = text      
+      if 'AllowBrowseRadioDetail' in one_item and 'Description' in one_item:
+        one_item['Description'] = unquote(one_item['Description'].encode("utf-8"))
+          
       all_items.append(one_item)
 
     return all_items
