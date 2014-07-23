@@ -154,6 +154,7 @@ if __name__ == "__main__":
     elif op == "-a" or op == "--ad_types":
       ad_types = value
     elif op == "-c" or op == "--create_mode":
+      print "Is Create Mode."
       printCreateSql = True
     elif op == "-t" or op == "--testdb_mode":
       useLocalDb = True
@@ -186,7 +187,9 @@ if __name__ == "__main__":
     # Use a common keyword to get all schema
     keywords = [[0, u"万科", u"万科"]]
   else:
+    print "Loading keywords from database."
     keywords = loader.getAllKeywords(dbLayer)
+    print "keywords: ", keywords
 
   runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number, ad_types.split(","))
 
