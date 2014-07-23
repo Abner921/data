@@ -161,7 +161,7 @@ if __name__ == "__main__":
       outputCrawlerDebugInfo = True
     else:
       print "Usage: "
-      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e=2014-02-03 -a=1,2,3 -n=100 -t -c -v"
+      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -t -c -v"
       print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
       print "                      --number=100 --test_mode --create_mode --verbose_mode"
       sys.exit()
