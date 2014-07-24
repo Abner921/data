@@ -141,6 +141,7 @@ if __name__ == "__main__":
   ad_types = "1,2,3,4,5,6"
   number = 100
   password = ""
+  ip = ""
 
   for op, value in opts:
     if op == "-p" or op == "--password":
@@ -154,7 +155,6 @@ if __name__ == "__main__":
     elif op == "-a" or op == "--ad_types":
       ad_types = value
     elif op == "-c" or op == "--create_mode":
-      print "Is Create Mode."
       printCreateSql = True
     elif op == "-r" or op == "--remotedb_mode":
       useLocalDb = False
@@ -168,6 +168,8 @@ if __name__ == "__main__":
       print "                      --number=100  --create_mode --verbose_mode"
       sys.exit()
 
+  print "outputCrawlerDebugInfo :",outputCrawlerDebugInfo
+  print "Is Create Mode: ", printCreateSql
   print "Start: ", start_date
   print "End: ", end_date
   print "Number: ", number
