@@ -141,7 +141,6 @@ if __name__ == "__main__":
   ad_types = "1,2,3,4,5,6"
   number = 100
   password = ""
-  ip = '114.215.200.214'
 
   for op, value in opts:
     if op == "-p" or op == "--password":
