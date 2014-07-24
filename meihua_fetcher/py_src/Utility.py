@@ -212,7 +212,7 @@ class Utility:
     if is_string:
       macro_key = self.__STRING_KEY_BEGIN__ + key + self.__STRING_KEY_END__
       # print "---------- value: ", value, " macro: ", macro_key, " input_value: ", input_value 
-      return value.replace(macro_key, input_value)
+      return value.replace(macro_key, str(input_value))
     else:
       return input_value
 
