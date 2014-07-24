@@ -145,7 +145,7 @@ if __name__ == "__main__":
   for op, value in opts:
     if op == "-p" or op == "--password":
       password = value
-    if op == "-s" or op == "--start_date":
+    elif op == "-s" or op == "--start_date":
       start_date = value
     elif op == "-e" or op == "--end_date":
       end_date = value
@@ -154,6 +154,7 @@ if __name__ == "__main__":
     elif op == "-a" or op == "--ad_types":
       ad_types = value
     elif op == "-c" or op == "--create_mode":
+      print "Is Create Mode."
       printCreateSql = True
     elif op == "-t" or op == "--testdb_mode":
       useLocalDb = True
@@ -161,8 +162,8 @@ if __name__ == "__main__":
       outputCrawlerDebugInfo = True
     else:
       print "Usage: "
-      print "MeihuaPipelineMain.py -s 2013-01-02 -e=2014-02-03 -a='1,2,3' -n=100 -t -c -v"
-      print "MeihuaPipelineMain.py --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
+      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -t -c -v"
+      print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
       print "                      --number=100 --test_mode --create_mode --verbose_mode"
       sys.exit()
 
@@ -186,7 +187,9 @@ if __name__ == "__main__":
     # Use a common keyword to get all schema
     keywords = [[0, u"万科", u"万科"]]
   else:
+    print "Loading keywords from database."
     keywords = loader.getAllKeywords(dbLayer)
+    print "keywords: ", keywords
 
   runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number, ad_types.split(","))
 
