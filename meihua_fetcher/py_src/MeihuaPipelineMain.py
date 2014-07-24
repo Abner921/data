@@ -22,7 +22,7 @@ actionProcessor = SingleActionProcessor()
 utility = Utility()
 parser = MeihuaDataParser()
 writer = MeihuaDataWriter()
-useLocalDb = False
+useLocalDb = True
 printCreateSql = False
 useBrandNameAsKeyword = True  # otherwise use content_to_search
 dbDryRunMode = False
@@ -130,9 +130,9 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
 
 
 if __name__ == "__main__":
-  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:ctv",
+  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:cv",
                              ["password=", "start_date=", "end_date=", "number=", "ad_types=",
-                              "create_mode", "testdb_mode", "verbose_mode"])
+                              "remotedb_mode=","create_mode", "verbose_mode"])
   
   # default values
   start_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -141,6 +141,7 @@ if __name__ == "__main__":
   ad_types = "1,2,3,4,5,6"
   number = 100
   password = ""
+  ip = '114.215.200.214'
 
   for op, value in opts:
     if op == "-p" or op == "--password":
@@ -156,28 +157,30 @@ if __name__ == "__main__":
     elif op == "-c" or op == "--create_mode":
       print "Is Create Mode."
       printCreateSql = True
-    elif op == "-t" or op == "--testdb_mode":
-      useLocalDb = True
+    elif op == "-r" or op == "--remotedb_mode":
+      useLocalDb = False
+      ip = value
     elif op == "-v" or op == "--verbose_mode":
       outputCrawlerDebugInfo = True
     else:
       print "Usage: "
-      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -t -c -v"
-      print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
-      print "                      --number=100 --test_mode --create_mode --verbose_mode"
+      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -r 114.215.200.214 -c -v"
+      print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 --remotedb_mode=114.215.200.214"
+      print "                      --number=100  --create_mode --verbose_mode"
       sys.exit()
 
   print "Start: ", start_date
   print "End: ", end_date
   print "Number: ", number
   print "Ad types: ", ad_types
+  print "host ip:" , ip
 
   dbLayer = DatabaseLayer()
   dbLayer.setDryRun(dbDryRunMode)
   if useLocalDb:
     result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
   else:
-    result = dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd=password, dbport=33306)
+    result = dbLayer.connect(host= ip, db='fdd_direct', user='root', pwd=password, dbport=33306)
 
   if not result:
     exit(1)
