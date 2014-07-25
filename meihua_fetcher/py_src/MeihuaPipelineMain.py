@@ -72,25 +72,24 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
         keyword = keyword[1].encode('UTF-8')
       else:
         keyword = keyword[2].encode('UTF-8')
-      for adType in typeList:
-        print "================== ADTYPE : ", adType, " kwd: ", keyword
         
-        crawlParameters = {
+      crawlParameters = {
             'KEYWORD' : keyword,
             'START_DATE' : startDate,
             'END_DATE' : endDate,
-            'AD_TYPE' : adType,
             'NUMBER_AD' : number
         }
-        
-        searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
-        utility.processSiteData(searchCookieAction, crawlParameters)
-        returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
-        if returnCode != ErrorCode.ACTION_SUCCEED:
-          utility.printError("Get cookie request failed for keyword: " +
-                             keyword + " errorcode: " + str(returnCode))
-          continue
-        
+      searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
+      utility.processSiteData(searchCookieAction, crawlParameters)
+      returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
+      if returnCode != ErrorCode.ACTION_SUCCEED:
+        utility.printError("Get cookie request failed for keyword: " +
+                           keyword + " errorcode: " + str(returnCode))
+        continue
+      
+      for adType in typeList:
+        print "================== ADTYPE : ", adType, " kwd: ", keyword
+        crawlParameters['AD_TYPE'] = adType
         listAllAction = copy.deepcopy(MeihuaListAllAction)
         utility.processSiteData(listAllAction, crawlParameters)
         returnCode = actionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
