@@ -16,6 +16,7 @@ from MeihuaKeywordLoader import *
 from MeihuaDataParser import *
 from MeihuaAdType import *
 from MeihuaDataWriter import *
+from multiprocessing import Pool
 
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
@@ -64,6 +65,9 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
     
     createSqls = [writer.getCreateSchemaTableSql()]
     
+    # set the processes max number 3
+    pool = Pool(processes=6)    
+    
     # Start to fill in the keyword and search:
     for keyword in keywordList:
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
@@ -72,46 +76,26 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
         keyword = keyword[1].encode('UTF-8')
       else:
         keyword = keyword[2].encode('UTF-8')
+
+      crawlParameters = {
+          'KEYWORD' : keyword,
+          'START_DATE' : startDate,
+          'END_DATE' : endDate,
+          'NUMBER_AD' : number
+      }
+      searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
+      utility.processSiteData(searchCookieAction, crawlParameters)
+      returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
+      if returnCode != ErrorCode.ACTION_SUCCEED:
+        utility.printError("Get cookie request failed for keyword: " +
+                           keyword + " errorcode: " + str(returnCode))
+        continue
+
       for adType in typeList:
-        print "================== ADTYPE : ", adType, " kwd: ", keyword
-        
-        crawlParameters = {
-            'KEYWORD' : keyword,
-            'START_DATE' : startDate,
-            'END_DATE' : endDate,
-            'AD_TYPE' : adType,
-            'NUMBER_AD' : number
-        }
-        
-        searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
-        utility.processSiteData(searchCookieAction, crawlParameters)
-        returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
-        if returnCode != ErrorCode.ACTION_SUCCEED:
-          utility.printError("Get cookie request failed for keyword: " +
-                             keyword + " errorcode: " + str(returnCode))
-          continue
-        
-        listAllAction = copy.deepcopy(MeihuaListAllAction)
-        utility.processSiteData(listAllAction, crawlParameters)
-        returnCode = actionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
-        
-        if returnCode != ErrorCode.ACTION_SUCCEED:
-          utility.printError("Get search result request failed for keyword: " +
-                             keyword + " errorcode: " + str(returnCode))
-          continue
+        pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,actionProcessor))
       
-        # Parse the data:
-        allAdContent = inputInfo["MEIHUA_SEARCH_RESULT"]
-        results = parser.parseData(allAdContent)
-        
-        if printCreateSql and len(results) > 0:
-          createSql = writer.getCreateTableSql(results, adType)
-          createSqls.append(createSql)
-          createSqls.append("")
-        
-        if not printCreateSql and len(results) > 0:
-          print "Inserting ", len(results), " records."
-          writer.insertToTable(dbLayer, keywordId, results, adType)
+      pool.close()
+      pool.join()
 
     print "\n".join(createSqls)
     
@@ -127,8 +111,33 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
   # add product request file name should be like:
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+  
+def insertToTableByType (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,actionProcessor):
+  print "================== ADTYPE : ", adType, " kwd: ", keyword
+  crawlParameters['AD_TYPE'] = adType
+  listAllAction = copy.deepcopy(MeihuaListAllAction)
+  utility.processSiteData(listAllAction, crawlParameters)
+  returnCode = actionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
+  
+  if returnCode != ErrorCode.ACTION_SUCCEED:
+    utility.printError("Get search result request failed for keyword: " +
+                       keyword + " errorcode: " + str(returnCode))
+    return
 
+  # Parse the data:
+  allAdContent = inputInfo["MEIHUA_SEARCH_RESULT"]
+  results = parser.parseData(allAdContent)
+  
+  if printCreateSql and len(results) > 0:
+    createSql = writer.getCreateTableSql(results, adType)
+    createSqls.append(createSql)
+    createSqls.append("")
+  
+  if not printCreateSql and len(results) > 0:
+    print "Inserting ", len(results), " records."
+    writer.insertToTable(dbLayer, keywordId, results, adType)
 
+#main
 if __name__ == "__main__":
   opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:cv",
                              ["password=", "start_date=", "end_date=", "number=", "ad_types=",
