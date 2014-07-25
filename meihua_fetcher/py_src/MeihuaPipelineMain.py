@@ -65,7 +65,14 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
     createSqls = [writer.getCreateSchemaTableSql()]
     
     # Start to fill in the keyword and search:
+    progress = 0
+    totalProgress = len(keywordList)
+    
     for keyword in keywordList:
+      print "===== Current progress: ", progress/totalProgress
+      print "===== Completed: ", progress, " out of ", totalProgress
+      progress = progress + 1
+
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
       keywordId = keyword[0]
       if useBrandNameAsKeyword:
