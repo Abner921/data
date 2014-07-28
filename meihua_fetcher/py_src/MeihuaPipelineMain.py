@@ -69,7 +69,14 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
     pool = Pool(processes=6)    
     
     # Start to fill in the keyword and search:
+    progress = 0
+    totalProgress = len(keywordList)
+    
     for keyword in keywordList:
+      print "===== Current progress: ", progress/totalProgress
+      print "===== Completed: ", progress, " out of ", totalProgress
+      progress = progress + 1
+
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
       keywordId = keyword[0]
       if useBrandNameAsKeyword:
@@ -101,7 +108,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
       """start subprocess"""
       for adType in typeList:
         pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,cookielist))
-      
+
       pool.close()
       pool.join()
 
