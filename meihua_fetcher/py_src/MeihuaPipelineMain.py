@@ -91,15 +91,16 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
                            keyword + " errorcode: " + str(returnCode))
         continue
       
+      """cookielist is created to share data """
       manager = Manager()
-      a = manager.list()
+      cookielist = manager.list()
       """get cookie array"""
       cookies = actionProcessor.cj.__iter__()
       for cookie in cookies:
-        a.append(cookie)
+        cookielist.append(cookie)
       """start subprocess"""
       for adType in typeList:
-        pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,a))
+        pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,cookielist))
       
       pool.close()
       pool.join()
@@ -119,11 +120,11 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
   
-def insertToTableByType (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,a):
+def insertToTableByType (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,cookielist):
   print "================== ADTYPE : ", adType, " kwd: ", keyword
   """create a SingleActionProcessor object,and put cookie in newActionProcessor"""
   newActionProcessor = SingleActionProcessor()
-  for cookie in a:
+  for cookie in cookielist:
     newActionProcessor.cj.set_cookie(cookie)
     
   crawlParameters['AD_TYPE'] = adType
