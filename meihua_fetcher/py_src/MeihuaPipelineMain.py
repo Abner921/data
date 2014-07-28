@@ -16,7 +16,7 @@ from MeihuaKeywordLoader import *
 from MeihuaDataParser import *
 from MeihuaAdType import *
 from MeihuaDataWriter import *
-from multiprocessing import Pool
+from multiprocessing import Pool,Manager
 
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
@@ -90,9 +90,16 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
         utility.printError("Get cookie request failed for keyword: " +
                            keyword + " errorcode: " + str(returnCode))
         continue
-
+      
+      manager = Manager()
+      a = manager.list()
+      """get cookie array"""
+      cookies = actionProcessor.cj.__iter__()
+      for cookie in cookies:
+        a.append(cookie)
+      """start subprocess"""
       for adType in typeList:
-        pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,actionProcessor))
+        pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,a))
       
       pool.close()
       pool.join()
@@ -112,12 +119,17 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
   
-def insertToTableByType (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,actionProcessor):
+def insertToTableByType (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,a):
   print "================== ADTYPE : ", adType, " kwd: ", keyword
+  """create a SingleActionProcessor object,and put cookie in newActionProcessor"""
+  newActionProcessor = SingleActionProcessor()
+  for cookie in a:
+    newActionProcessor.cj.set_cookie(cookie)
+    
   crawlParameters['AD_TYPE'] = adType
   listAllAction = copy.deepcopy(MeihuaListAllAction)
   utility.processSiteData(listAllAction, crawlParameters)
-  returnCode = actionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
+  returnCode = newActionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
   
   if returnCode != ErrorCode.ACTION_SUCCEED:
     utility.printError("Get search result request failed for keyword: " +
