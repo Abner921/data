@@ -17,6 +17,7 @@ from MeihuaDataParser import *
 from MeihuaAdType import *
 from MeihuaDataWriter import *
 from multiprocessing import Pool,Manager
+import SyncCrawlAndInsertData
 
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
@@ -65,9 +66,6 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
     
     createSqls = [writer.getCreateSchemaTableSql()]
     
-    # set the processes max number 3
-    pool = Pool(processes=6)    
-    
     # Start to fill in the keyword and search:
     progress = 0
     totalProgress = len(keywordList)
@@ -75,6 +73,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
     for keyword in keywordList:
       print "===== Current progress: ", progress/totalProgress
       print "===== Completed: ", progress, " out of ", totalProgress
+      print "===== Current Keyword: ", keyword
       progress = progress + 1
 
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
@@ -98,20 +97,25 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
                            keyword + " errorcode: " + str(returnCode))
         continue
       
-      """cookielist is created to share data """
-      manager = Manager()
-      cookielist = manager.list()
-      """get cookie array"""
+      #create a list to store Action
+      actionList = []
+      for adType in typeList:
+        crawlParameters['AD_TYPE'] = adType
+        listAllAction = copy.deepcopy(MeihuaListAllAction)
+        utility.processSiteData(listAllAction, crawlParameters)
+        actionList.append(listAllAction)
+      #get cookie array
+      cookielist = []
       cookies = actionProcessor.cj.__iter__()
       for cookie in cookies:
-        cookielist.append(cookie)
-      """start subprocess"""
-      for adType in typeList:
-        pool.apply_async(insertToTableByType, (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,cookielist))
-
-      pool.close()
-      pool.join()
-
+        cookielist.append(cookie)  
+      #start new process,and crawl data
+      results = SyncCrawlAndInsertData.creatAndStartPool(cookielist, actionList)
+      for result in results:
+        tempList = result.get()
+        tempLen = len(tempList)
+        insertToTableByType(createSqls,keywordId,tempList[:tempLen-1],tempList[tempLen-1])
+    
     print "\n".join(createSqls)
     
   except Exception, e:
@@ -127,27 +131,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
   
-def insertToTableByType (keyword,adType,crawlParameters,inputInfo,createSqls,keywordId,cookielist):
-  print "================== ADTYPE : ", adType, " kwd: ", keyword
-  """create a SingleActionProcessor object,and put cookie in newActionProcessor"""
-  newActionProcessor = SingleActionProcessor()
-  for cookie in cookielist:
-    newActionProcessor.cj.set_cookie(cookie)
-    
-  crawlParameters['AD_TYPE'] = adType
-  listAllAction = copy.deepcopy(MeihuaListAllAction)
-  utility.processSiteData(listAllAction, crawlParameters)
-  returnCode = newActionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
-  
-  if returnCode != ErrorCode.ACTION_SUCCEED:
-    utility.printError("Get search result request failed for keyword: " +
-                       keyword + " errorcode: " + str(returnCode))
-    return
-
-  # Parse the data:
-  allAdContent = inputInfo["MEIHUA_SEARCH_RESULT"]
-  results = parser.parseData(allAdContent)
-  
+def insertToTableByType (createSqls,keywordId,results,adType):
   if printCreateSql and len(results) > 0:
     createSql = writer.getCreateTableSql(results, adType)
     createSqls.append(createSql)
@@ -208,7 +192,7 @@ if __name__ == "__main__":
   dbLayer = DatabaseLayer()
   dbLayer.setDryRun(dbDryRunMode)
   if useLocalDb:
-    result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
+    result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd=password)
   else:
     result = dbLayer.connect(host= ip, db='fdd_direct', user='root', pwd=password, dbport=33306)
 
