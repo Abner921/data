@@ -17,7 +17,6 @@ from MeihuaDataParser import *
 from MeihuaAdType import *
 from MeihuaDataWriter import *
 from multiprocessing import Pool,Manager
-import ParallellyCrawlData
 
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
