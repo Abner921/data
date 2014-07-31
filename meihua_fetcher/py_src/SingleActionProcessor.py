@@ -10,6 +10,8 @@ from Utility import Utility
 from SiteData import *
 from ErrorCode import *
 from pprint import pprint
+from multiprocessing import Pool,Manager
+from ResultData import *
 
 TIMEOUTS = 50
 socket.setdefaulttimeout(TIMEOUTS)
@@ -30,7 +32,19 @@ class SingleActionProcessor:
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
     urllib2.install_opener(opener)
 
-
+  def setCookieList(self,cookieList):
+    for cookie in cookieList:
+      self.cj.set_cookie(cookie)
+  
+  def getCookieList(self):
+    # get cookie array
+    cookielist = []
+    cookies = self.cj.__iter__()
+    for cookie in cookies:
+      cookielist.append(cookie) 
+      
+    return cookielist
+  
   def getEncodedUrl(self, actionInfo):
     if actionInfo.has_key("url_params") and actionInfo["url_params"]:
       return actionInfo["url"] + "?" + urllib.urlencode(actionInfo["url_params"])
@@ -342,3 +356,58 @@ class SingleActionProcessor:
       inputInfo[key] = fallback_value
       utility.printMessage("Fallback the value " + key +
                            " from " + old_value + " to " + fallback_value)
+      
+        
+# coolieLists store coolie that we can use to login page 
+# actionList store some things we will to do 
+# processCount is the number of process
+def processActionsParallelly(cookielists, actionList, processCount):
+  # set the processes max number processCount
+  pool = Pool(processes=int(processCount))
+  # cookieList is created to share data with other process
+  manager = Manager()
+  cookielist = manager.list()
+  for cookie in cookielists:
+    cookielist.append(cookie)
+  # store  return results
+  results = []  
+  # start subprocess
+  for action in actionList:
+    results.append(pool.apply_async(processActions, (action, cookielist)))
+  pool.close()
+  pool.join()
+    
+  return results
+
+
+def processActions(action, cookielist):
+  # create a SingleActionProcessor object,and put cookie in newActionProcessor
+  newActionProcessor = SingleActionProcessor()
+  newActionProcessor.setCookieList(cookielist)
+  # store content that webPage return
+  inputInfo = {}
+  resultData = ResultData()
+  returnCode = newActionProcessor.processOneActionWithRetry(inputInfo, action)
+  
+  if returnCode != ErrorCode.ACTION_SUCCEED:
+    utility.printError("Get search result request failed for this action: " +
+                       action['action_name'] + " errorcode: " + str(returnCode))
+    resultData.setStatus(returnCode)
+    return resultData
+  
+  #define a list to store results
+  results = {}
+  # resultMap store some keys,and we need these keys to obtain results 
+  resultMap = action["result"][0]
+  #print resultMap.items()
+  for (key,value) in resultMap.items():
+    if key == 'result_regex': continue
+    if key == 'match_multiline': continue
+    results[value] = inputInfo[value]
+    
+  if results:
+    resultData.setResultMap(results)
+    resultData.setStatus(returnCode)
+    resultData.setActionInfo(action)
+  
+  return resultData     
