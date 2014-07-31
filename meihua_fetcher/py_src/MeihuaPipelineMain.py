@@ -104,12 +104,12 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
         listAllAction = copy.deepcopy(MeihuaListAllAction)
         utility.processSiteData(listAllAction, crawlParameters)
         actionList.append(listAllAction)
+        
       # start new process,and crawl data
-      results = ParallellyCrawlData.creatAndStartPool(actionProcessor.getCookieList(), actionList,processCount)
+      results = processActionsParallelly(actionProcessor.getCookieList(), actionList, processCount)
       for result in results:
-        tempList = result.get()
-        if tempList.getStatus() == "yes":
-          insertToTableByType(createSqls,keywordId,tempList.getResultMap(),tempList.getType())
+        if result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
+          insertToTableByType(createSqls, keywordId, result.get())
     
     print "\n".join(createSqls)
     
@@ -126,8 +126,9 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
   
-def insertToTableByType(createSqls,keywordId,results,adType):
-  allAdContent = results["MEIHUA_SEARCH_RESULT"]
+def insertToTableByType(createSqls,keywordId,result):
+  allAdContent = result.getResultMap()["MEIHUA_SEARCH_RESULT"]
+  adType = result.getActionInfo()["url_params"]["adType"]
   value = parser.parseData(allAdContent)
   if printCreateSql and len(value) > 0:
     createSql = writer.getCreateTableSql(value, adType)
