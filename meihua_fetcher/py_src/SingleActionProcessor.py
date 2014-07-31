@@ -30,7 +30,19 @@ class SingleActionProcessor:
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
     urllib2.install_opener(opener)
 
-
+  def setCookie(self,cookieList):
+    for cookie in cookieList:
+      self.cj.set_cookie(cookie)
+  
+  def getCookieList(self):
+    # get cookie array
+    cookielist = []
+    cookies = self.cj.__iter__()
+    for cookie in cookies:
+      cookielist.append(cookie) 
+      
+    return cookielist
+  
   def getEncodedUrl(self, actionInfo):
     if actionInfo.has_key("url_params") and actionInfo["url_params"]:
       return actionInfo["url"] + "?" + urllib.urlencode(actionInfo["url_params"])

@@ -16,19 +16,21 @@ from MeihuaKeywordLoader import *
 from MeihuaDataParser import *
 from MeihuaAdType import *
 from MeihuaDataWriter import *
+from multiprocessing import Pool,Manager
+import ParallellyCrawlData
 
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
 utility = Utility()
 parser = MeihuaDataParser()
 writer = MeihuaDataWriter()
-useLocalDb = False
+useLocalDb = True
 printCreateSql = False
 useBrandNameAsKeyword = True  # otherwise use content_to_search
 dbDryRunMode = False
 outputCrawlerDebugInfo = False
 
-def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList):
+def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processCount, typeList):
   try:
     productFileName = "meihua_config.txt"
     # Return False if failed, or True if done.
@@ -71,6 +73,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
     for keyword in keywordList:
       print "===== Current progress: ", progress/totalProgress
       print "===== Completed: ", progress, " out of ", totalProgress
+      print "===== Current Keyword: ", keyword
       progress = progress + 1
 
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
@@ -79,13 +82,13 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
         keyword = keyword[1].encode('UTF-8')
       else:
         keyword = keyword[2].encode('UTF-8')
-        
+
       crawlParameters = {
-            'KEYWORD' : keyword,
-            'START_DATE' : startDate,
-            'END_DATE' : endDate,
-            'NUMBER_AD' : number
-        }
+          'KEYWORD' : keyword,
+          'START_DATE' : startDate,
+          'END_DATE' : endDate,
+          'NUMBER_AD' : number
+      }
       searchCookieAction = copy.deepcopy(MeihuaGetSearchCookieAction)
       utility.processSiteData(searchCookieAction, crawlParameters)
       returnCode = actionProcessor.processOneActionWithRetry(inputInfo, searchCookieAction)
@@ -94,31 +97,20 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
                            keyword + " errorcode: " + str(returnCode))
         continue
       
+      # create a list to store Action
+      actionList = []
       for adType in typeList:
-        print "================== ADTYPE : ", adType, " kwd: ", keyword
         crawlParameters['AD_TYPE'] = adType
         listAllAction = copy.deepcopy(MeihuaListAllAction)
         utility.processSiteData(listAllAction, crawlParameters)
-        returnCode = actionProcessor.processOneActionWithRetry(inputInfo, listAllAction)
-        
-        if returnCode != ErrorCode.ACTION_SUCCEED:
-          utility.printError("Get search result request failed for keyword: " +
-                             keyword + " errorcode: " + str(returnCode))
-          continue
-      
-        # Parse the data:
-        allAdContent = inputInfo["MEIHUA_SEARCH_RESULT"]
-        results = parser.parseData(allAdContent)
-        
-        if printCreateSql and len(results) > 0:
-          createSql = writer.getCreateTableSql(results, adType)
-          createSqls.append(createSql)
-          createSqls.append("")
-        
-        if not printCreateSql and len(results) > 0:
-          print "Inserting ", len(results), " records."
-          writer.insertToTable(dbLayer, keywordId, results, adType)
-
+        actionList.append(listAllAction)
+      # start new process,and crawl data
+      results = ParallellyCrawlData.creatAndStartPool(actionProcessor.getCookieList(), actionList,processCount)
+      for result in results:
+        tempList = result.get()
+        if tempList.getStatus() == "yes":
+          insertToTableByType(createSqls,keywordId,tempList.getResultMap(),tempList.getType())
+    
     print "\n".join(createSqls)
     
   except Exception, e:
@@ -133,12 +125,24 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, typeList
   # add product request file name should be like:
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+  
+def insertToTableByType(createSqls,keywordId,results,adType):
+  allAdContent = results["MEIHUA_SEARCH_RESULT"]
+  value = parser.parseData(allAdContent)
+  if printCreateSql and len(value) > 0:
+    createSql = writer.getCreateTableSql(value, adType)
+    createSqls.append(createSql)
+    createSqls.append("")
+  
+  if not printCreateSql and len(value) > 0:
+    print "Inserting ", len(value), " records."
+    writer.insertToTable(dbLayer, keywordId, value, adType)
 
 
 if __name__ == "__main__":
-  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:ctv",
+  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:o:cv",
                              ["password=", "start_date=", "end_date=", "number=", "ad_types=",
-                              "create_mode", "testdb_mode", "verbose_mode"])
+                              "remotedb_mode=","processCount=","create_mode", "verbose_mode"])
   
   # default values
   start_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -147,6 +151,8 @@ if __name__ == "__main__":
   ad_types = "1,2,3,4,5,6"
   number = 100
   password = ""
+  ip = ""
+  processCount = 6
 
   for op, value in opts:
     if op == "-p" or op == "--password":
@@ -160,30 +166,36 @@ if __name__ == "__main__":
     elif op == "-a" or op == "--ad_types":
       ad_types = value
     elif op == "-c" or op == "--create_mode":
-      print "Is Create Mode."
       printCreateSql = True
-    elif op == "-t" or op == "--testdb_mode":
-      useLocalDb = True
+    elif op == "-r" or op == "--remotedb_mode":
+      useLocalDb = False
+      ip = value
     elif op == "-v" or op == "--verbose_mode":
       outputCrawlerDebugInfo = True
+    elif op == "-o" or op == "--processCount":
+      processCount = value
     else:
       print "Usage: "
-      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -t -c -v"
-      print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 "
-      print "                      --number=100 --test_mode --create_mode --verbose_mode"
+      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -r 114.215.200.214 -o 6 -c -v"
+      print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 --remotedb_mode=114.215.200.214"
+      print "                      --number=100 --processCount=6 --create_mode --verbose_mode"
       sys.exit()
 
+  print "outputCrawlerDebugInfo :",outputCrawlerDebugInfo
+  print "Is Create Mode: ", printCreateSql
   print "Start: ", start_date
   print "End: ", end_date
   print "Number: ", number
   print "Ad types: ", ad_types
+  print "host ip: " , ip
+  print "processCount: ", processCount
 
   dbLayer = DatabaseLayer()
   dbLayer.setDryRun(dbDryRunMode)
   if useLocalDb:
-    result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd='password')
+    result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd=password)
   else:
-    result = dbLayer.connect(host='114.215.200.214', db='fdd_direct', user='root', pwd=password, dbport=33306)
+    result = dbLayer.connect(host= ip, db='fdd_direct', user='root', pwd=password, dbport=33306)
 
   if not result:
     exit(1)
@@ -197,6 +209,6 @@ if __name__ == "__main__":
     keywords = loader.getAllKeywords(dbLayer)
     print "keywords: ", keywords
 
-  runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number, ad_types.split(","))
+  runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number,processCount, ad_types.split(","))
 
   dbLayer.close()
