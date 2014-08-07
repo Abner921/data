@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # -*- coding: unicode -*-
-import sys,urllib,urllib2,gzip,StringIO,io,cookielib,re,socket,time,os,traceback,copy,datetime
+import sys,urllib,urllib2,gzip,StringIO,io,cookielib,re,socket,time,os,traceback,copy
 from cookielib import CookieJar
 from threading import Thread
 import socket
@@ -13,8 +13,7 @@ from pprint import pprint
 from multiprocessing import Pool,Manager
 from ResultData import *
 
-TIMEOUTS = 50
-#socket.setdefaulttimeout(TIMEOUTS)
+SINGLE_PROCESS_TIMEOUTS = 50
 utility = Utility()
 
 # Processor for one single action, for example, one post, one get, with one result check.
@@ -362,9 +361,11 @@ class SingleActionProcessor:
 # actionList store some things we will to do 
 # processCount is the number of process
 def processActionsParallelly(actionProcessor, actionList, processCount):
-  # store  return results
+  # store return results
   results = []  
-  if processCount == "1":
+  # check procesCount and decide whether run in multi or single process mode.
+  if processCount == "1":  
+    socket.setdefaulttimeout(SINGLE_PROCESS_TIMEOUTS)
     for action in actionList:
       results.append(processActions(action, processCount, [], actionProcessor))
   else:
@@ -380,7 +381,7 @@ def processActionsParallelly(actionProcessor, actionList, processCount):
   return results
 
 def processActions(action, processCount, cookielist=[], newActionProcessor=None):
-  if int(processCount)>1: 
+  if int(processCount) > 1: 
     # create a SingleActionProcessor object,and put cookie in newActionProcessor
     newActionProcessor = SingleActionProcessor()
     newActionProcessor.setCookieList(cookielist)

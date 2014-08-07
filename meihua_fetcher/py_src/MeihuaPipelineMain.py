@@ -19,7 +19,7 @@ from MeihuaDataWriter import *
 from multiprocessing import Pool,Manager
 import datetime
 
-curentTime = datetime.datetime.now()
+startTime = datetime.datetime.now()
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
 utility = Utility()
@@ -110,17 +110,17 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
       results = processActionsParallelly(actionProcessor, actionList, processCount)
         
       for result in results:
-        if int(processCount)>1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
+        if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
           insertToTableByType(createSqls, keywordId, result.get())
-        elif processCount=="1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
+        elif processCount == "1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
           insertToTableByType(createSqls, keywordId, result)
     
     print "\n".join(createSqls)
     endTime = datetime.datetime.now()
     print "==============================================================="
-    print "start time :",curentTime
-    print "spend time :",endTime - curentTime
-    print "end   time :",endTime
+    print "start time : ", startTime
+    print "spend time : ", endTime - startTime
+    print "end   time : ", endTime
     print "==============================================================="
     
   except Exception, e:
