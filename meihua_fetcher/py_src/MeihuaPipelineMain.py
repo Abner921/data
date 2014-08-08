@@ -17,7 +17,9 @@ from MeihuaDataParser import *
 from MeihuaAdType import *
 from MeihuaDataWriter import *
 from multiprocessing import Pool,Manager
+import datetime
 
+startTime = datetime.datetime.now()
 requestInfoLoader = RequestInfoLoader(utility)
 actionProcessor = SingleActionProcessor()
 utility = Utility()
@@ -103,14 +105,23 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
         listAllAction = copy.deepcopy(MeihuaListAllAction)
         utility.processSiteData(listAllAction, crawlParameters)
         actionList.append(listAllAction)
-        
+      
       # start new process,and crawl data
-      results = processActionsParallelly(actionProcessor.getCookieList(), actionList, processCount)
+      results = processActionsParallelly(actionProcessor, actionList, processCount)
+        
       for result in results:
-        if result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
+        if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
           insertToTableByType(createSqls, keywordId, result.get())
+        elif processCount == "1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
+          insertToTableByType(createSqls, keywordId, result)
     
     print "\n".join(createSqls)
+    endTime = datetime.datetime.now()
+    print "==============================================================="
+    print "start time : ", startTime
+    print "spend time : ", endTime - startTime
+    print "end   time : ", endTime
+    print "==============================================================="
     
   except Exception, e:
     # utility.printError("Un-catched Exceptions when processing request: " +  productFileName, e)

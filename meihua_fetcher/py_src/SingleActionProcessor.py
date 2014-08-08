@@ -13,8 +13,8 @@ from pprint import pprint
 from multiprocessing import Pool,Manager
 from ResultData import *
 
-TIMEOUTS = 50
-socket.setdefaulttimeout(TIMEOUTS)
+SINGLE_PROCESS_TIMEOUTS = 50
+socket.setdefaulttimeout(SINGLE_PROCESS_TIMEOUTS)
 utility = Utility()
 
 # Processor for one single action, for example, one post, one get, with one result check.
@@ -361,29 +361,30 @@ class SingleActionProcessor:
 # coolieLists store coolie that we can use to login page 
 # actionList store some things we will to do 
 # processCount is the number of process
-def processActionsParallelly(cookielists, actionList, processCount):
-  # set the processes max number processCount
-  pool = Pool(processes=int(processCount))
-  # cookieList is created to share data with other process
-  manager = Manager()
-  cookielist = manager.list()
-  for cookie in cookielists:
-    cookielist.append(cookie)
-  # store  return results
+def processActionsParallelly(actionProcessor, actionList, processCount):
+  # store return results
   results = []  
-  # start subprocess
-  for action in actionList:
-    results.append(pool.apply_async(processActions, (action, cookielist)))
-  pool.close()
-  pool.join()
-    
+  # check procesCount and decide whether run in multi or single process mode.
+  if processCount == "1":  
+    for action in actionList:
+      results.append(processActions(action, processCount, [], actionProcessor))
+  else:
+    # set the processes max number processCount
+    pool = Pool(processes=int(processCount))
+    sharedCookies =  actionProcessor.getCookieList()
+    # start subprocess
+    for action in actionList:
+      results.append(pool.apply_async(processActions, (action, processCount, sharedCookies)))        
+    pool.close()
+    pool.join()
+
   return results
 
-
-def processActions(action, cookielist):
-  # create a SingleActionProcessor object,and put cookie in newActionProcessor
-  newActionProcessor = SingleActionProcessor()
-  newActionProcessor.setCookieList(cookielist)
+def processActions(action, processCount, cookielist=[], newActionProcessor=None):
+  if int(processCount) > 1: 
+    # create a SingleActionProcessor object,and put cookie in newActionProcessor
+    newActionProcessor = SingleActionProcessor()
+    newActionProcessor.setCookieList(cookielist)
   # store content that webPage return
   inputInfo = {}
   resultData = ResultData()
