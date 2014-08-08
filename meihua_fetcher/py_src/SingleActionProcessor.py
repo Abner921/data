@@ -14,6 +14,7 @@ from multiprocessing import Pool,Manager
 from ResultData import *
 
 SINGLE_PROCESS_TIMEOUTS = 50
+socket.setdefaulttimeout(SINGLE_PROCESS_TIMEOUTS)
 utility = Utility()
 
 # Processor for one single action, for example, one post, one get, with one result check.
@@ -365,7 +366,6 @@ def processActionsParallelly(actionProcessor, actionList, processCount):
   results = []  
   # check procesCount and decide whether run in multi or single process mode.
   if processCount == "1":  
-    socket.setdefaulttimeout(SINGLE_PROCESS_TIMEOUTS)
     for action in actionList:
       results.append(processActions(action, processCount, [], actionProcessor))
   else:
