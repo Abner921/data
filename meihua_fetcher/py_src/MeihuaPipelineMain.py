@@ -71,18 +71,18 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
     progress = 0
     totalProgress = len(keywordList)
     
-    for keyword in keywordList:
+    for keywordTuple in keywordList:
       print "===== Current progress: ", progress/totalProgress
       print "===== Completed: ", progress, " out of ", totalProgress
-      print "===== Current Keyword: ", keyword
+      print "===== Current Keyword: ", keywordTuple
       progress = progress + 1
 
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
-      keywordId = keyword[0]
+      keywordId = keywordTuple[0]
       if useBrandNameAsKeyword:
-        keyword = keyword[1].encode('UTF-8')
+        keyword = keywordTuple[1].encode('UTF-8')
       else:
-        keyword = keyword[2].encode('UTF-8')
+        keyword = keywordTuple[2].encode('UTF-8')
 
       crawlParameters = {
           'KEYWORD' : keyword,
@@ -111,9 +111,9 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
         
       for result in results:
         if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
-          insertToTableByType(createSqls, keywordId, result.get())
+          insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
         elif processCount == "1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
-          insertToTableByType(createSqls, keywordId, result)
+          insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
     
     print "\n".join(createSqls)
     endTime = datetime.datetime.now()
@@ -136,7 +136,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
   
-def insertToTableByType(createSqls,keywordId,result):
+def insertToTableByType(createSqls,keywordId,result, count):
   allAdContent = result.getResultMap()["MEIHUA_SEARCH_RESULT"]
   adType = result.getActionInfo()["url_params"]["adType"]
   value = parser.parseData(allAdContent)
@@ -148,12 +148,13 @@ def insertToTableByType(createSqls,keywordId,result):
   if not printCreateSql and len(value) > 0:
     print "Inserting ", len(value), " records."
     writer.insertToTable(dbLayer, keywordId, value, adType)
+    dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (count + 1, keywordId))
 
 
 if __name__ == "__main__":
-  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:o:cv",
+  opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:o:cvf",
                              ["password=", "start_date=", "end_date=", "number=", "ad_types=",
-                              "remotedb_mode=","processCount=","create_mode", "verbose_mode"])
+                              "remotedb_mode=","processCount=","create_mode", "verbose_mode", "frequent_mode"])
   
   # default values
   start_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -164,6 +165,7 @@ if __name__ == "__main__":
   password = ""
   ip = ""
   processCount = 6
+  frequentMode = False
 
   for op, value in opts:
     if op == "-p" or op == "--password":
@@ -185,11 +187,13 @@ if __name__ == "__main__":
       outputCrawlerDebugInfo = True
     elif op == "-o" or op == "--processCount":
       processCount = value
+    elif op == "-f" or op == "--frequent_mode":
+      frequentMode = True
     else:
       print "Usage: "
-      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -r 114.215.200.214 -o 6 -c -v"
+      print "MeihuaPipelineMain.py -p pass -s 2013-01-02 -e 2014-02-03 -a 1,2,3 -n 100 -r 114.215.200.214 -o 6 -c -v -f"
       print "MeihuaPipelineMain.py --password=test --start_date=2013-01-02 --end_date=2014-02-03 --ad_types=1,2,3 --remotedb_mode=114.215.200.214"
-      print "                      --number=100 --processCount=6 --create_mode --verbose_mode"
+      print "                      --number=100 --processCount=6 --create_mode --verbose_mode --frequent_mode"
       sys.exit()
 
   print "outputCrawlerDebugInfo :",outputCrawlerDebugInfo
@@ -200,6 +204,7 @@ if __name__ == "__main__":
   print "Ad types: ", ad_types
   print "host ip: " , ip
   print "processCount: ", processCount
+  print "frequentMode: ", frequentMode
 
   dbLayer = DatabaseLayer()
   dbLayer.setDryRun(dbDryRunMode)
@@ -217,7 +222,11 @@ if __name__ == "__main__":
     keywords = [[0, u"万科", u"万科"]]
   else:
     print "Loading keywords from database."
-    keywords = loader.getAllKeywords(dbLayer)
+    if frequentMode:
+      keywords = loader.getFrequentKeywords(dbLayer)
+      print len(keywords)
+    else:
+      keywords = loader.getAllKeywords(dbLayer)
     print "keywords: ", keywords
 
   runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number,processCount, ad_types.split(","))
