@@ -34,7 +34,10 @@ class DatabaseLayer:
             print("Connect Error % d: % s" % (e.args[0], e.args[1]))
             return False
 
-
+    def update_by_sql(self, sql):
+      self.cursor.execute(sql)
+      self.conn.commit()
+      
     def close(self):
         try:
             self.cursor.close()
