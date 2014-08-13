@@ -112,10 +112,10 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
       contentCount = 0  
       for result in results:
         if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
-          contentCount = contentCount + insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
-        elif processCount == "1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
-          contentCount = contentCount + insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
-      # update the colume 
+          contentCount += insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
+        elif int(processCount) <= 1 and result.getStatus() == ErrorCode.ACTION_SUCCEED:
+          contentCount += insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
+      # update the search_count
       dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (contentCount, keywordId))
     
     print "\n".join(createSqls)
@@ -154,6 +154,10 @@ def insertToTableByType(createSqls,keywordId,result, count):
     return len(value)
   return 0
 
+def printKeywords(keywords):
+  for keywordTuple in keywords:
+    print keywordTuple[0], keywordTuple[1].encode("UTF-8"), keywordTuple[2].encode('UTF-8'), keywordTuple[3]
+  
 if __name__ == "__main__":
   opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:o:cvf",
                              ["password=", "start_date=", "end_date=", "number=", "ad_types=",
@@ -222,14 +226,16 @@ if __name__ == "__main__":
   loader = MeihuaKeywordLoader()
   if printCreateSql:
     # Use a common keyword to get all schema
-    keywords = [[0, u"万科", u"万科",0]]
+    keywords = [[0, u"万科", u"万科", 0]]
   else:
     print "Loading keywords from database."
     if frequentMode:
       keywords = loader.getFrequentKeywords(dbLayer)
     else:
       keywords = loader.getAllKeywords(dbLayer)
-    print "keywords: ", keywords
+      
+    print "keywords:  count: ", len(keywords)
+    print "Top 100 keywords: ", printKeywords(keywords[0: min(100, len(keywords))])
 
   runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number,processCount, ad_types.split(","))
 
