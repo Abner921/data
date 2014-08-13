@@ -108,12 +108,15 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
       
       # start new process,and crawl data
       results = processActionsParallelly(actionProcessor, actionList, processCount)
-        
+      # contentCount use to count the number of results for each keyword
+      contentCount = 0  
       for result in results:
         if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
-          insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
-        elif processCount == "1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
-          insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
+          contentCount += insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
+        elif int(processCount) <= 1 and result.getStatus() == ErrorCode.ACTION_SUCCEED:
+          contentCount += insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
+      # update the search_count
+      dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (contentCount, keywordId))
     
     print "\n".join(createSqls)
     endTime = datetime.datetime.now()
@@ -148,9 +151,13 @@ def insertToTableByType(createSqls,keywordId,result, count):
   if not printCreateSql and len(value) > 0:
     print "Inserting ", len(value), " records."
     writer.insertToTable(dbLayer, keywordId, value, adType)
-    dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (count + 1, keywordId))
+    return len(value)
+  return 0
 
-
+def printKeywords(keywords):
+  for keywordTuple in keywords:
+    print keywordTuple[0], keywordTuple[1].encode("UTF-8"), keywordTuple[2].encode('UTF-8'), keywordTuple[3]
+  
 if __name__ == "__main__":
   opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:o:cvf",
                              ["password=", "start_date=", "end_date=", "number=", "ad_types=",
@@ -211,7 +218,7 @@ if __name__ == "__main__":
   if useLocalDb:
     result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd=password)
   else:
-    result = dbLayer.connect(host= ip, db='fdd_direct', user='root', pwd=password, dbport=33306)
+    result = dbLayer.connect(host= ip, db='fdd_direct', user='admin', pwd=password, dbport=3306)
 
   if not result:
     exit(1)
@@ -219,15 +226,16 @@ if __name__ == "__main__":
   loader = MeihuaKeywordLoader()
   if printCreateSql:
     # Use a common keyword to get all schema
-    keywords = [[0, u"万科", u"万科"]]
+    keywords = [[0, u"万科", u"万科", 0]]
   else:
     print "Loading keywords from database."
     if frequentMode:
       keywords = loader.getFrequentKeywords(dbLayer)
-      print len(keywords)
     else:
       keywords = loader.getAllKeywords(dbLayer)
-    print "keywords: ", keywords
+      
+    print "keywords:  count: ", len(keywords)
+    print "Top 100 keywords: ", printKeywords(keywords[0: min(100, len(keywords))])
 
   runMeihuaPipeline(dbLayer, keywords, start_date, end_date, number,processCount, ad_types.split(","))
 
