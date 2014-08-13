@@ -214,7 +214,7 @@ if __name__ == "__main__":
   if useLocalDb:
     result = dbLayer.connect(host='localhost', db='fdd_direct', user='root', pwd=password)
   else:
-    result = dbLayer.connect(host= ip, db='fdd_direct', user='root', pwd=password, dbport=33306)
+    result = dbLayer.connect(host= ip, db='fdd_direct', user='admin', pwd=password, dbport=3306)
 
   if not result:
     exit(1)
