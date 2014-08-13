@@ -108,12 +108,15 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
       
       # start new process,and crawl data
       results = processActionsParallelly(actionProcessor, actionList, processCount)
-        
+      # contentCount use to count the number of results for each keyword
+      contentCount = 0  
       for result in results:
         if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
-          insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
+          contentCount = contentCount + insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
         elif processCount == "1" and result.getStatus() == ErrorCode.ACTION_SUCCEED:
-          insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
+          contentCount = contentCount + insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
+      # update the colume 
+      dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (contentCount, keywordId))
     
     print "\n".join(createSqls)
     endTime = datetime.datetime.now()
@@ -148,8 +151,8 @@ def insertToTableByType(createSqls,keywordId,result, count):
   if not printCreateSql and len(value) > 0:
     print "Inserting ", len(value), " records."
     writer.insertToTable(dbLayer, keywordId, value, adType)
-    dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (count + 1, keywordId))
-
+    return len(value)
+  return 0
 
 if __name__ == "__main__":
   opts, args = getopt.getopt(sys.argv[1:], "p:s:e:a:n:r:o:cvf",
@@ -219,12 +222,11 @@ if __name__ == "__main__":
   loader = MeihuaKeywordLoader()
   if printCreateSql:
     # Use a common keyword to get all schema
-    keywords = [[0, u"万科", u"万科"]]
+    keywords = [[0, u"万科", u"万科",0]]
   else:
     print "Loading keywords from database."
     if frequentMode:
       keywords = loader.getFrequentKeywords(dbLayer)
-      print len(keywords)
     else:
       keywords = loader.getAllKeywords(dbLayer)
     print "keywords: ", keywords
