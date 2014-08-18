@@ -38,7 +38,7 @@ def insert_activity(keyword_id, result):
   link = remove_gabage_params(result["link"])
   conn3 = MySQLdb.connect(host='localhost', db='fdd_direct', user='root', passwd='password', charset='utf8')
   curs3 = conn3.cursor()
-  curs3.execute("SELECT id FROM t_keyword_activities WHERE link = %s", link)
+  curs3.execute("SELECT id FROM t_keyword_activities WHERE link = %s OR title = %s", [link, result["title"]])
   if curs3.fetchone() is None and not testing:
     curs3.execute("INSERT t_keyword_activities VALUES (null, %s, %s, %s, %s, %s, %s, %s, %s)",
                  [
