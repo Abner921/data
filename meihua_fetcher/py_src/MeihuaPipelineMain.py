@@ -34,7 +34,7 @@ catetoryName = {
     "1":['服务公寓','工业用房','海上泊位','墓园','商铺','商务楼','土地','住宅-别墅','住宅-公寓','综合房产','出租与出售','酒店度假村','房地产服务','房地产交易中心'],
     "2":['服务公寓','工业用房','海上泊位','墓园','商铺','商务楼','土地','住宅-别墅','住宅-公寓','综合房产','出租与出售','酒店度假村','房地产服务','房地产交易中心'],
     "6":['服务公寓','工业用房','海上泊位','墓园','商铺','商务楼','土地','住宅-别墅','住宅-公寓','综合房产','出租与出售','酒店度假村','房地产服务','房地产交易中心'],
-    "3":"房",
+    "3":['房'],
     "4":['房地产类|房地产类|楼盘宣传','房地产类|房地产类|商业街','房地产类|房地产类|商务出租','房地产类|房地产类|建筑器材服务','房地产类|房地产类|房地产企业形象','房地产类|房地产类|房产中介','房地产类|装潢设计|装潢/设计']
 }
 
@@ -164,18 +164,11 @@ def insertToTableByType(createSqls,keywordId,result, count):
 
 def filterData(values, adType):
   filterValue = []
-  if adType == '1' or adType == '2' or adType == '6':
-    for value in values:
-      if value[u'CategoryName'].encode("UTF-8") in catetoryName[adType]:
+  for value in values:
+    for filterWord in catetoryName[adType]:
+      if value[u'CategoryName'].encode("UTF-8").find(filterWord) > -1:
         filterValue.append(value)
-  elif adType == '3':
-    for value in values:
-      if value[u'CategoryName'].encode("UTF-8").find(catetoryName[adType]) > 0:
-        filterValue.append(value)
-  elif adType == '4':
-    for value in values:
-      if value[u'CategoryName'].encode("UTF-8") in catetoryName[adType]:
-        filterValue.append(value)
+        break
   return filterValue
 
 def printKeywords(keywords):
