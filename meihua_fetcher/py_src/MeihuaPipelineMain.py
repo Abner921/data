@@ -27,7 +27,6 @@ parser = MeihuaDataParser()
 writer = MeihuaDataWriter()
 useLocalDb = True
 printCreateSql = False
-useBrandNameAsKeyword = False  # otherwise use content_to_search
 dbDryRunMode = False
 outputCrawlerDebugInfo = False
 catetoryName = {
@@ -95,13 +94,12 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
 
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
       keywordId = keywordTuple[0]
-      if useBrandNameAsKeyword:
-        keyword = keywordTuple[1].encode('UTF-8')
-      else:
-        #keyword = keywordTuple[2].encode('UTF-8')
-        keywordList = keywordTuple[2].encode('UTF-8').split(" ")
-        keyword = keywordList[0]
-        city = keywordList[1]
+      #keyword = keywordTuple[2].encode('UTF-8')
+      keywordList = keywordTuple[2].encode('UTF-8').split(" ")
+      if len(keywordList) < 2:
+        continue
+      keyword = keywordList[0]
+      city = keywordList[1]
 
       crawlParameters = {
           'KEYWORD' : keyword,
@@ -177,26 +175,30 @@ def insertToTableByType(createSqls, keywordId, result, city):
   return 0
 
 def filterUncorrelatedData(values, adType, city):
-  filterValue = []
+  relatedValue = filterDataByCategore(values, adType)
+  if len(relatedValue) > 0:
+    relatedValue = filterDataByCity(relatedValue, adType,city)
+  return relatedValue
+
+def filterDataByCategore(values, adType):
+  relatedValue = []
   for value in values:
     for filterWord in catetoryName[adType]:
       if value[u'CategoryName'].encode("UTF-8").find(filterWord) > -1:
-        filterValue.append(value)
+        relatedValue.append(value)
         break
-  if len(filterValue) > 0:
-    filterValue = filterDataByCity(filterValue, adType,city)
-  return filterValue
+  return relatedValue
 
 #filter uncorrelate data according to cityName
 def filterDataByCity(values, adType,city):
-  filterValue = []
+  relatedValue = []
   for value in values:
     for category in cityName[adType]:
       if category in value.keys():
         if value[category].encode("UTF-8").find(city) > -1:
-          filterValue.append(value)
+          relatedValue.append(value)
           break
-  return filterValue
+  return relatedValue
 
 def printKeywords(keywords):
   for keywordTuple in keywords:
