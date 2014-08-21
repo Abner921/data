@@ -27,7 +27,6 @@ parser = MeihuaDataParser()
 writer = MeihuaDataWriter()
 useLocalDb = True
 printCreateSql = False
-useBrandNameAsKeyword = True  # otherwise use content_to_search
 dbDryRunMode = False
 outputCrawlerDebugInfo = False
 catetoryName = {
@@ -37,6 +36,14 @@ catetoryName = {
     "3":['房'],
     "4":['房地产类|房地产类|楼盘宣传','房地产类|房地产类|商业街','房地产类|房地产类|商务出租','房地产类|房地产类|建筑器材服务','房地产类|房地产类|房地产企业形象','房地产类|房地产类|房产中介','房地产类|装潢设计|装潢/设计'],
     "5":['房地产']
+}
+cityName = {
+    "1":[u'MediumCity',u'BrandName'],
+    "2":[u'BrandName',u'ChannelName'],
+    "3":[u'CityName',u'BrandName'],
+    "4":[u'CapturedChannel',u'BrandName',u'ProductName'],
+    "5":[u'BrandName',u'CityName'],
+    "6":[u'BrandName',u'AdvertiserName']
 }
 
 def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processCount, typeList):
@@ -87,10 +94,12 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
 
 #      print "Keyword: ", keyword[0], " ", keyword[1].encode('UTF-8')
       keywordId = keywordTuple[0]
-      if useBrandNameAsKeyword:
-        keyword = keywordTuple[1].encode('UTF-8')
-      else:
-        keyword = keywordTuple[2].encode('UTF-8')
+      #keyword = keywordTuple[2].encode('UTF-8')
+      keywordList = keywordTuple[2].encode('UTF-8').split(" ")
+      if len(keywordList) < 2:
+        continue
+      keyword = keywordList[0]
+      city = keywordList[1]
 
       crawlParameters = {
           'KEYWORD' : keyword,
@@ -120,11 +129,12 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
       contentCount = 0  
       for result in results:
         if int(processCount) > 1 and result.get().getStatus() == ErrorCode.ACTION_SUCCEED:
-          contentCount += insertToTableByType(createSqls, keywordId, result.get(), keywordTuple[3])
+          contentCount += insertToTableByType(createSqls, keywordId, result.get(), city)
         elif int(processCount) <= 1 and result.getStatus() == ErrorCode.ACTION_SUCCEED:
-          contentCount += insertToTableByType(createSqls, keywordId, result, keywordTuple[3])
+          contentCount += insertToTableByType(createSqls, keywordId, result, city)
       # update the search_count
-      dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (contentCount, keywordId))
+      if contentCount > 0:
+        dbLayer.update_by_sql("UPDATE t_keywords SET search_count = %s WHERE id = %s" % (contentCount, keywordId))
     
     print "\n".join(createSqls)
     endTime = datetime.datetime.now()
@@ -147,7 +157,7 @@ def runMeihuaPipeline(dbLayer, keywordList, startDate, endDate, number, processC
   # add_time_productname.txt
   # datetime.datetime.now().strftime("%Y%m%d%H%M%S")
   
-def insertToTableByType(createSqls,keywordId,result, count):
+def insertToTableByType(createSqls, keywordId, result, city):
   allAdContent = result.getResultMap()["MEIHUA_SEARCH_RESULT"]
   adType = result.getActionInfo()["url_params"]["adType"]
   value = parser.parseData(allAdContent)
@@ -158,19 +168,37 @@ def insertToTableByType(createSqls,keywordId,result, count):
   
   if not printCreateSql and len(value) > 0:
     print "Inserting ", len(value), " records."
-    value = filterData(value,adType)
-    writer.insertToTable(dbLayer, keywordId, value, adType)
-    return len(value)
+    value = filterUncorrelatedData(value, adType, city)
+    if len(value) > 0:
+      writer.insertToTable(dbLayer, keywordId, value, adType)
+      return len(value)
   return 0
 
-def filterData(values, adType):
-  filterValue = []
+def filterUncorrelatedData(values, adType, city):
+  relatedValue = filterDataByCategore(values, adType)
+  if len(relatedValue) > 0:
+    relatedValue = filterDataByCity(relatedValue, adType,city)
+  return relatedValue
+
+def filterDataByCategore(values, adType):
+  relatedValue = []
   for value in values:
     for filterWord in catetoryName[adType]:
       if value[u'CategoryName'].encode("UTF-8").find(filterWord) > -1:
-        filterValue.append(value)
+        relatedValue.append(value)
         break
-  return filterValue
+  return relatedValue
+
+#filter uncorrelate data according to cityName
+def filterDataByCity(values, adType,city):
+  relatedValue = []
+  for value in values:
+    for category in cityName[adType]:
+      if category in value.keys():
+        if value[category].encode("UTF-8").find(city) > -1:
+          relatedValue.append(value)
+          break
+  return relatedValue
 
 def printKeywords(keywords):
   for keywordTuple in keywords:
