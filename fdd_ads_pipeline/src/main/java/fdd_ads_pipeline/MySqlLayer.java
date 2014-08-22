@@ -6,25 +6,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class DB {
-	private static java.sql.Connection connection;
+public class MySqlLayer {
+	
+	private java.sql.Connection connection;
 
-	static {
-		Properties prop = ConfigLoader.getJdbcProperties();
-		String driverName = (String) prop.get("jdbc.driver");
-		String serverUrl = (String) prop.get("jdbc.fdd_direct.url");
-		String userName = (String) prop.get("jdbc.fdd_direct.username");
-		String password = (String) prop.get("jdbc.fdd_direct.password");
-		
+	public boolean Connect(String driverName, String serverUrl, String userName, String password) {
 		try {
 			Class.forName(driverName);
 			connection = DriverManager.getConnection(serverUrl, userName, password);
 		} catch (Exception e) {
 			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	public void close() {
+		try {
+			if (connection != null) {
+				connection.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	public static void update(String sql) {
+	public void update(String sql) {
 		try {
 			PreparedStatement ps = connection.prepareStatement(sql);
 			ps.executeUpdate();
@@ -33,7 +40,7 @@ public class DB {
 		}
 	}
 	
-	public static ResultSet query(String sql) {
+	public ResultSet query(String sql) {
 		PreparedStatement ps = null;
 		try {
 			ps = connection.prepareStatement(sql);
