@@ -10,8 +10,8 @@ if sys.getdefaultencoding() != default_encoding:
 
 class ReportParser(object):
 
-    def __init__(self,filePath):
-        self.filePath = filePath
+    def __init__(self,report):
+        self.filePath = report.filePath
         #self.filePath = report.filePath
         #self.reportType = report.requestParams['reportType']
         #self.reportTypeDesc = report.reportTypeDesc
@@ -24,28 +24,33 @@ class ReportParser(object):
     def __init_mapping(self):
         self.mapping={}
         self.mapping['date']='日期'
-        self.mapping['accountid']='账户ID'
+        self.mapping['accountId']='账户ID'
         self.mapping['account']='账户'
-        self.mapping['campaignid']='推广计划ID'
-        self.mapping['campaigname']='推广计划'
+        self.mapping['campaignId']='推广计划ID'
+        self.mapping['campaignName']='推广计划'
 
-        self.mapping['adgroupid']='推广组ID'
-        self.mapping['adgroupname']='推广组'
+        self.mapping['adgroupId']='推广组ID'
+        self.mapping['adgroupName']='推广组'
 
-        self.mapping['keywordid']='关键词keywordID'
-        self.mapping['wordid']='关键词ID'
+        self.mapping['keywordId']='关键词keywordID'
+        self.mapping['wordId']='关键词ID'
         self.mapping['keyword']='关键词'
 
-        self.mapping['creativeid']='创意ID'
+        self.mapping['creativeId']='创意ID'
         self.mapping['title']='创意标题'
-        self.mapping['creativetype']='创意类型'
+        self.mapping['creativeType']='创意类型'
         self.mapping['description1']='创意描述1'
         self.mapping['description2']='创意描述2'
 
-        self.mapping['regionid']='地域ID'
+        self.mapping['regionId']='地域ID'
         self.mapping['region']='地域'
-        self.mapping['regiontype']='地域类型'
-        self.mapping['regionid1']='一级地域ID'
+        self.mapping['regionType']='地域类型'
+        self.mapping['regionId1']='一级地域ID'
+
+        self.mapping['site']='网站'
+
+        self.mapping['industryId']='行业ID'
+        self.mapping['industry']='行业'
 
         self.mapping['impression']='展现'
         self.mapping['click']='点击'
@@ -53,10 +58,7 @@ class ReportParser(object):
         self.mapping['cpc']='平均点击价格'
         self.mapping['ctr']='CTR'
         self.mapping['cpm']='CPM'
-        self.mapping['cpm']='CPM'
-        self.mapping['CTR']='CTR'
-        self.mapping['CPM']='CPM'
-        self.mapping['ACP']='ACP'
+        self.mapping['acp']='ACP'
 
     def parseCsvFileHead(self):
         try:
@@ -73,7 +75,6 @@ class ReportParser(object):
             print e
 
     def parseCsvFileBody(self):
-
 
         try:
             with open(self.filePath, 'rb') as csvfile:
