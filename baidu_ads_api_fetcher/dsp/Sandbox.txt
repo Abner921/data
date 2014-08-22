@@ -1,0 +1,51 @@
+************************************************中文*****************************************************
+---沙盒地址:
+
+https://sfapitest.baidu.com
+您只需要修改serverUrl就可以在沙盒环境和线上环境之间切换。
+
+---沙盒介绍:
+
+沙箱与正式环境的区别在于使用了不同的域名、token值和独立的账号。在您成功获得正式环境的token后，请您登陆API主页下载申请表
+格，按照页面所示申请流程，发送申请沙箱使用权的邮件至apitest@baidu.com ，百度会在核实后向您发送回复邮件，邮件中会包含您
+的沙箱账号和token值。 
+
+沙箱环境内没有生产数据，无法获取账户的统计报表。 
+如果您需要在沙箱中生成统计报表，请发送邮件至apihelp@baidu.com，将您的沙箱账号，需要生成数据的关键词id, 创意id信息包括在
+邮件中。我们会根据您的要求构造相应的数据。请注意：数据构造不能构造过去时间的数据。例如您于9月9日申请构造数据，我们从9月11
+日开始为你构造数据，则您能获取的绩效数据只能是9月11日往后的，而无法获取过去时间段的数据。 
+
+---注意事项:
+
+百度的沙盒环境的证书和服务器的域名是不匹配的，所以在您使用沙盒的时候，需要屏蔽掉client库的证书检查功能。这个功能client库
+已经为您提供，您只需要修改配置文件(baidu-api.properties)设置：disableCNCheck=true就可以实现。在您完成开发切换到线上环境
+时，请您注意设置：disableCNCheck=false来恢复client lib的证书检查功能。(重要)
+
+***********************************************English***********************************************************
+---SandBox Address:
+
+https://sfapitest.baidu.com
+We prepared both online environment address & sandbox environment address for you in baidu-api.properties
+
+---SandBox Usage:
+
+The sand box use different domain name, token and account from the production environment. Please login API homepage
+to download the sandbox application form after you received the production environment token. Follow the sandbox 
+application process as indicated in the homepage. The sandbox account and token will be sent to you once your 
+application is approved. 
+
+There is no production data in the test environment, so you can not get statistical reports in the sandbox. If you 
+need to get reports in sandbox, please send email to apihelp@baidu.com, we can generate data under your specified 
+keyword id and creative id. Please note: we can not generate history data. For example, youe send the email to ask 
+for report data on Sep. 9, we begin to generate data for you on Sep.11, then you can get the data beginning from 
+Sep.11. 
+
+---KeyPoints:
+
+The sandbox URL hostname does not match the Common Name (CN) on the server certificate. To disable this check (NOT 
+recommended for production) set the configuration property "disableCNCheck" to true in baidu-api.properties. Please
+set it to false in production environment to enable server Common Name (CN) check.(Important.)
+
+------------------------------------------------------------------------------------------------------------------
+Copyright 2012 Baidu.com Inc.
+Baidu API Team
