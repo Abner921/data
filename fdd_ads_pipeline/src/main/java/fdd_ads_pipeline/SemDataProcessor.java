@@ -17,60 +17,34 @@ import com.mongodb.Mongo;
 import com.mongodb.MongoException;
 
 public class SemDataProcessor {
+
 	private static Logger logger = LoggerFactory.getLogger(SemDataProcessor.class.getCanonicalName());
+
+	private boolean debug = true;
 	
-	private static Map<String, String> BAIDU_SEM_COLUMN_NAME_MAP = ImmutableMap.<String, String>builder()
-			.put("impression", "impression")
-			.put("adgroupId", "adgroup_id")
-			.put("keyword", "keyword")
-			.build();
+	private BaiduSemDataConverter baiduConverter = new BaiduSemDataConverter();
+	private SogouSemDataConverter sogouConverter = new SogouSemDataConverter();
 	
-	public void ProcessBaiduSem() {
+	public void ProcessAll() {
+		ProcessSem("baidu_sem_raw", baiduConverter);
+		ProcessSem("sogou_sem_raw", sogouConverter);
+	}
+	
+	public void ProcessSem(String collectionName, MongoRowConverter converter) {
 		DB rawDB = LoadMongoDb("fdd_ads");
-		DBCollection rawCollection = rawDB.getCollection("baidu_sem_raw");
+		DBCollection rawCollection = rawDB.getCollection(collectionName);
 		DBCollection semCollection = rawDB.getCollection("sem_data");
 		DBCursor cursor = rawCollection.find();
 		
 		int i = 0;
 		while(cursor.hasNext()) {
-			i ++;
-			if (i > 100) return;
-			
+			if (debug) {
+				i ++;
+				if (i > 100) return;				
+			}
 			DBObject row = cursor.next();
-			semCollection.insert(ProcessBaiduSemJson(row));
+			semCollection.insert(converter.convert(row));
 		}
-	}
-
-	public DBObject ProcessBaiduSemJson(DBObject raw) {
-		logger.info("Baidu SEM raw: " + raw.toString());
-		
-		String campaignName = raw.get("campaignName").toString();
-		String houseName = getHouseNameFromCampaignName(campaignName);
-		String houseId = getHouseIdByName(houseName);
-		String houseCityId = getHouseCityId(houseId);
-		
-		DBObject semRow = new BasicDBObject();
-		for (String originColumn : BAIDU_SEM_COLUMN_NAME_MAP.keySet()) {
-			semRow.put(BAIDU_SEM_COLUMN_NAME_MAP.get(originColumn), (String) raw.get(originColumn));
-		}
-		
-		// TODO: add new columns: house / city / others.
-		return semRow;
-	}
-
-	private String getHouseCityId(String houseId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private String getHouseIdByName(String houseName) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private String getHouseNameFromCampaignName(String campaignName) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	private DB LoadMongoDb(String datastore) {
