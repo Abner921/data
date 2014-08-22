@@ -10,10 +10,10 @@ reports = db.baidu_sem_raw
 
 def save_report(rowDict):
 
-    keyFields = ['id','date', 'accountId', 'campaignId', 'adgroupId',\
-                 'keywordId', 'wordId', 'creativeId', 'regionId',\
-                 'device','unitOfTime','deviceId','unitOfTimeId','deviceName','unitOfTimeName', 'report_typ']
-    performanceFields= ['create_date','impression', 'click', 'cost', 'cpc', 'ctr', 'cpm']  #'create_date' need update
+    keyFields = ['id','date', 'accountId', 'campaignId', 'adgroupId',
+                 'keywordId', 'wordId', 'creativeId', 'regionId',
+                 'device','unitOfTime','deviceId','unitOfTimeId','deviceName','unitOfTimeName', 'reportType']
+    performanceFields= ['createDate','impression', 'click', 'cost', 'cpc', 'ctr', 'cpm']  #'create_date' need update
 
     keys = rowDict.keys()
     values = rowDict.values()
