@@ -1,22 +1,27 @@
 package fdd_ads_pipeline;
 
-import java.util.Map;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
-import com.google.common.collect.Maps;
-
 public class ConfigLoader {
-
-	private final Map<String, Properties> propertiesMap = Maps.newHashMap();
+	private static Properties jdbcProp;
+	
+	static {
+		String fileName = "jdbc.properties";
+		jdbcProp = new Properties();
+		try {
+			InputStream is = new FileInputStream(new File("").getAbsolutePath() + File.separator + fileName);
+			jdbcProp.load(is);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	public static Properties getJdbcProperties() {
-		// TODO: load from txt file
-		
-		Properties p = new Properties();
-		p.setProperty("jdbc.fdd_ads.host", "192.168.9.102");
-		p.setProperty("jdbc.fdd_ads.username", "");
-		p.setProperty("jdbc.fdd_ads.password", "");
-		p.setProperty("jdbc.fdd_ads.port", "27017");
-		return p;
+		return jdbcProp;
 	}
+	
 }
