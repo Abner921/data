@@ -2,7 +2,6 @@
 #encoding=utf-8
 from GetReport import Report
 from ReportParser import ReportParser
-from MySqlUtil import MySqlUtil
 from datetime import datetime
 from datetime import date, timedelta
 import sys,os
@@ -19,6 +18,7 @@ def fetchReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime):
     unitOfTime = report.requestParams['unitOfTime']
     parseReport = ReportParser(report)
 
+    ##import into db
     for rowDict in parseReport.parseCsvFileBody():
         rowDict['deviceName']= Contants.deviceName[device]
         rowDict['deviceId']= device
@@ -27,21 +27,8 @@ def fetchReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime):
         rowDict['unitOfTimeId']=unitOfTime
         rowDict['createDate']=datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         save_report(rowDict)
-    ##import into db
-    '''
-    mysqlConn = MySqlUtil()
-    csvHeadCode = parseReport.csvHeadCode
-    csvHeadCode.append('device')
-    csvHeadCode.append('report_typ')
-    csvHeadCode.append('unitOfTime')
-    mysqlConn.initAllSqlStr(csvHeadCode)
 
-    for rowDict in parseReport.parseCsvFileBody():
-        rowDict['device']= device
-        rowDict['report_typ']=reportType
-        rowDict['unitOfTime']=unitOfTime
-        mysqlConn.mergeReprtToDb(rowDict)
-        '''
+
 def test():
     yesterdayStr = (date.today()-timedelta(1)).strftime('%Y-%m-%d')
     yesterday = datetime.strptime(yesterdayStr,'%Y-%m-%d')
@@ -65,7 +52,7 @@ if __name__ == "__main__":
     today = date.today()
 
     baseDir = os.path.dirname(os.path.dirname(__file__))
-    dataDirPath = os.path.join(baseDir,'data',today.strftime('%Y-%m/%d'))
+    dataDirPath = os.path.join(baseDir,'data',yesterday.strftime('%Y-%m/%d'))
 
     usage = "usage: %prog [options] arg1 arg2"
     parser = OptionParser()
