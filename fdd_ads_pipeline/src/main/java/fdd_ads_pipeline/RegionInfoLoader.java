@@ -17,6 +17,10 @@ public class RegionInfoLoader {
 	public void init() {
 		List<String> lines = FileUtil.readLines("district_info.csv");
 		for (String line : lines) {
+			if(line==null || "".equals(line)) {
+				continue;
+			}
+			
 			String[] columns = line.split(",");
 			String cityId = columns[0];
 			String cityName = columns[1];
@@ -32,4 +36,5 @@ public class RegionInfoLoader {
 	public String getCityIdByName(String cityName) {
 		return districtNameToIdMap.get(cityName);
 	}
+	
 }

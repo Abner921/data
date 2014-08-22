@@ -1,6 +1,5 @@
 package fdd_ads_pipeline;
 
-import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -24,17 +23,15 @@ public class FetchDistrictInfoMain {
 				"select district_id, district_name, district_full_name, district_short_name from fdd_basic.t_districts;");
 		
 		FileUtil fileUtil = new FileUtil();
-		File file = new File(new File("").getAbsolutePath() + File.separator + "district_info.csv");
-		List<List<String>> listLists = Lists.newArrayList();
+		String fileName = "district_info.csv";
 		while (allDistricts.next()) {
-			List<String> line = Lists.newArrayList(
+			List<String> columns = Lists.newArrayList(
 					allDistricts.getString(1),
 					allDistricts.getString(2),
 					allDistricts.getString(3),
 					allDistricts.getString(4));
-			listLists.add(line);
+			fileUtil.writeCsvLine(fileName, columns);
 		}
-		fileUtil.writeLines(listLists, file);
 		
 		mysql.close();
 	}

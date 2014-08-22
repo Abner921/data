@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -51,16 +50,22 @@ public class FileUtil {
 	}
 	
 
-	public void writeLines(List<List<String>> listLists, File file) {
+	public static void writeLines(String fileName, List<String> lines) {
 		BufferedWriter writer = null;
+		File file = new File(new File("").getAbsolutePath() + File.separator + fileName);
 		try {
 			writer = new BufferedWriter(new FileWriter(file));
 		} catch (IOException e) {
 			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
 		}
 		
-		for(List<String> list : listLists) {
-			writeCsvLine(list, writer);
+		for(String line : lines) {
+			try {
+				writer.write(line);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		try {
@@ -77,9 +82,9 @@ public class FileUtil {
 	}
 
 
-	public void writeCsvLine(List<String> columns, Writer writer) {
+	public void writeCsvLine(String fileName, List<String> columns) {
 		String line = Joiner.on(',').join(columns);
-		System.out.println(line);
+		logger.debug(line);
 		for (String value : columns) {
 			if (value.contains(",")) {
 				logger.warn("ERROR: contains comma in the CSV columms: " + line);
@@ -87,11 +92,23 @@ public class FileUtil {
 			}
 		}
 		
+		File file = new File(new File("").getAbsolutePath() + File.separator + fileName);
+		BufferedWriter writer = null;
 		try {
-			writer.write(line);
+			writer = new BufferedWriter(new FileWriter(file, true));
+			writer.write(line + '\n');
+			writer.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				writer.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+		
+		
 	}
 
 }
