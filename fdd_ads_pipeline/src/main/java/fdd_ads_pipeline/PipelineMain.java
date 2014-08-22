@@ -1,4 +1,4 @@
-package mongodb_pipeline;
+package fdd_ads_pipeline;
 
 public class PipelineMain {
 	private static SemDataProcessor semProcessor = new SemDataProcessor();

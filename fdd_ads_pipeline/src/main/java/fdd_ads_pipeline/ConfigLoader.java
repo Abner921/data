@@ -1,4 +1,4 @@
-package mongodb.pipeline.config;
+package fdd_ads_pipeline;
 
 import java.util.Map;
 import java.util.Properties;

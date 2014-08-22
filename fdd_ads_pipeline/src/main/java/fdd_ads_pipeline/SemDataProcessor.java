@@ -1,10 +1,8 @@
-package mongodb_pipeline;
+package fdd_ads_pipeline;
 
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Properties;
-
-import mongodb.pipeline.config.ConfigLoader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +30,12 @@ public class SemDataProcessor {
 		DBCollection rawCollection = rawDB.getCollection("baidu_sem_raw");
 		DBCollection semCollection = rawDB.getCollection("sem_data");
 		DBCursor cursor = rawCollection.find();
+		
+		int i = 0;
 		while(cursor.hasNext()) {
+			i ++;
+			if (i > 100) return;
+			
 			DBObject row = cursor.next();
 			semCollection.insert(ProcessBaiduSemJson(row));
 		}
@@ -45,7 +48,6 @@ public class SemDataProcessor {
 		String houseName = getHouseNameFromCampaignName(campaignName);
 		String houseId = getHouseIdByName(houseName);
 		String houseCityId = getHouseCityId(houseId);
-		String servingRegion = raw.get("region").toString();
 		
 		DBObject semRow = new BasicDBObject();
 		for (String originColumn : BAIDU_SEM_COLUMN_NAME_MAP.keySet()) {
