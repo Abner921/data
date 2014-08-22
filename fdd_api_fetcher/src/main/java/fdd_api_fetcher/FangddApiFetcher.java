@@ -49,7 +49,7 @@ public class FangddApiFetcher {
 			JSONObject json= new JSONObject(jsonString);
 			JSONArray jsonArray=json.getJSONObject("data").getJSONArray("list");
 
-			logger.info(join(fieldNames));
+			System.out.println(join(fieldNames));
 			
 			for(int i=0;i<jsonArray.length();i++){  
 		        JSONObject houseInfo=(JSONObject) jsonArray.get(i);
@@ -58,7 +58,7 @@ public class FangddApiFetcher {
 		        for (String field : fieldNames) {
 		        	fields.add(houseInfo.getString(field));
 		        }
-		        logger.info(join(fields));
+		        System.out.println(join(fields));
 		    }
 		} catch (Exception e) {
 			e.printStackTrace();
