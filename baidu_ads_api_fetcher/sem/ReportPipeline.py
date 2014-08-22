@@ -2,13 +2,12 @@
 #encoding=utf-8
 from GetReport import Report
 from ReportParser import ReportParser
-from MySqlUtil import MySqlUtil
 from datetime import datetime
 from datetime import date, timedelta
 import sys,os
 from optparse import OptionParser
 from MongoUtil import save_report
-
+from Contants import Contants
 
 def fetchReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime):
 
@@ -19,23 +18,17 @@ def fetchReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime):
     unitOfTime = report.requestParams['unitOfTime']
     parseReport = ReportParser(report)
 
-    for rowDict in parseReport.parseCsvFileBody():
-        save_report(rowDict)
     ##import into db
-    '''
-    mysqlConn = MySqlUtil()
-    csvHeadCode = parseReport.csvHeadCode
-    csvHeadCode.append('device')
-    csvHeadCode.append('report_typ')
-    csvHeadCode.append('unitOfTime')
-    mysqlConn.initAllSqlStr(csvHeadCode)
-
     for rowDict in parseReport.parseCsvFileBody():
-        rowDict['device']= device
-        rowDict['report_typ']=reportType
-        rowDict['unitOfTime']=unitOfTime
-        mysqlConn.mergeReprtToDb(rowDict)
-        '''
+        rowDict['deviceName']= Contants.deviceName[device]
+        rowDict['deviceId']= device
+        rowDict['reportType']=reportType
+        rowDict['unitOfTimeName']= Contants.unitOfTimeName[unitOfTime]
+        rowDict['unitOfTimeId']=unitOfTime
+        rowDict['createDate']=datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        save_report(rowDict)
+
+
 def test():
     yesterdayStr = (date.today()-timedelta(1)).strftime('%Y-%m-%d')
     yesterday = datetime.strptime(yesterdayStr,'%Y-%m-%d')
@@ -64,13 +57,13 @@ if __name__ == "__main__":
     usage = "usage: %prog [options] arg1 arg2"
     parser = OptionParser()
 
-    parser.add_option("-r", "--report", action="store",dest="reportType",help="reportType", default="Keyword")
+    parser.add_option("-r", "--report", action="store",dest="reportType",help="Keyword|Campaign|Region", default="Keyword")
     parser.add_option("-s","--start", action="store", dest="startDate", default=yesterdayStr)
     parser.add_option("-e", "--end",action="store", dest="endDate",default=yesterdayStr)
-
     parser.add_option("-p", "--path",action="store", dest="fileDirPath",default=dataDirPath)
-    parser.add_option("-d", "--device",action="store",type="int", dest="device",default=1)
-    parser.add_option("-u", "--unit",action="store",type="int", dest="unitOfTime",default=5)
+
+    parser.add_option("-d", "--device",action="store",type="string", dest="deviceName",default="pc",help="pc|mobile|all")
+    parser.add_option("-u", "--unit",action="store",type="string", dest="unitOfTimeName",default="day",help="year|month|day|week|hour|period")
     (options, args) = parser.parse_args()
 
 
@@ -78,8 +71,9 @@ if __name__ == "__main__":
     startDate = datetime.strptime(options.startDate,'%Y-%m-%d')
     endDate = datetime.strptime(options.endDate,'%Y-%m-%d')
     fileDirPath = options.fileDirPath
-    device = options.device
-    unitOfTime = options.unitOfTime
+
+    device = Contants.deviceId[options.deviceName]
+    unitOfTime = Contants.unitOfTimeId[options.unitOfTimeName]
 
     if not os.path.isdir(fileDirPath):
         os.makedirs(fileDirPath)

@@ -4,8 +4,8 @@ import pymongo
 conn = pymongo.Connection('192.168.9.102', 27017)
 
 
-db = conn.etl
-reports = db.baidu_wangmeng_reports
+db = conn.fdd_ads
+reports = db.baidu_dsp_raw
 
 def save_report(rowDict):
     reports.insert(rowDict)
