@@ -49,7 +49,7 @@ def test():
 if __name__ == "__main__":
     yesterdayStr = (date.today()-timedelta(1)).strftime('%Y-%m-%d')
     yesterday = datetime.strptime(yesterdayStr,'%Y-%m-%d')
-    today = date.today()
+
 
     baseDir = os.path.dirname(os.path.dirname(__file__))
     dataDirPath = os.path.join(baseDir,'data',yesterday.strftime('%Y-%m/%d'))
