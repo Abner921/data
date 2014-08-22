@@ -10,6 +10,8 @@ from urllib import urlopen
 
 from ReportParser import ReportParser
 from MySqlUtil import MySqlUtil
+from Contants import Contants
+
 
 import sys
 default_encoding = 'utf-8'
@@ -257,7 +259,7 @@ class Report():
         endDateStr = datetime.strftime(endDate,'%Y%m%d')
         device = self.requestParams['device']
         #fileName = self.reportTypeDesc+'_'+str(device)+'['+startDateStr+'-'+endDateStr+'].csv'
-        fileName = "sem-baidu"+self.reportTypeDesc+'-'+str(device)+'.csv'
+        fileName = "sem-baidu"+'-'+Contants.deviceName[device]+'-'+self.reportTypeDesc+'.csv'
         filePath = os.path.join(fileDirPath,fileName)
         fileData=urlopen(self.reportFileUrl).read()
         f = file(filePath,"wb")
