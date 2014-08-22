@@ -211,3 +211,8 @@ pip-log.txt
 .mr.developer.cfg
 
 password.rb
+*.properties
+.idea/
+data/
+log/
+
