@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import com.fangdd.base.utils.http.HttpClientUtils;
 import com.fangdd.base.utils.http.UrlWrapper;
 import com.fangdd.base.utils.http.UserAgent;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class FangddApiFetcher {
