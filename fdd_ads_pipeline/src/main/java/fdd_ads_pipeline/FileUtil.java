@@ -20,7 +20,7 @@ public class FileUtil {
 	private static Logger logger = LoggerFactory.getLogger(FileUtil.class.getCanonicalName());
 	
 	public static List<String> readLines(String fileName) {
-		File sourceFile = new File(new File("").getAbsolutePath() + File.separator + fileName);
+		File sourceFile = new File(getProjectRootPath(fileName));
 		BufferedReader reader = null;
 		List<String> result = Lists.newArrayList();
 		try {
@@ -49,12 +49,12 @@ public class FileUtil {
 
 	public static void writeLines(String fileName, List<String> lines) {
 		BufferedWriter writer = null;
-		File file = new File(new File("").getAbsolutePath() + File.separator + fileName);
+		File file = new File(getProjectRootPath(fileName));
 		try {
 			writer = new BufferedWriter(new FileWriter(file));
 			
 			for(String line : lines) {
-				writer.write(line);
+				writer.write(line + '\n');
 			}
 			writer.flush();
 		} catch (IOException e) {
@@ -79,7 +79,7 @@ public class FileUtil {
 			}
 		}
 		
-		File file = new File(new File("").getAbsolutePath() + File.separator + fileName);
+		File file = new File(getProjectRootPath(fileName));
 		BufferedWriter writer = null;
 		try {
 			writer = new BufferedWriter(new FileWriter(file, true));
@@ -95,6 +95,11 @@ public class FileUtil {
 				e.printStackTrace();
 			}
 		}
+	}
+
+
+	public static String getProjectRootPath(String fileName) {
+		return new File("").getAbsolutePath() + File.separator + fileName;
 	}
 
 }

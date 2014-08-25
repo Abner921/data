@@ -18,10 +18,6 @@ public class RegionInfoLoader {
 	public void init() {
 		List<String> lines = FileUtil.readLines("district_info.csv");
 		for (String line : lines) {
-			if(Strings.isNullOrEmpty(line)) {
-				continue;
-			}
-			
 			String[] columns = line.split(",");
 			String cityId = columns[0];
 			String cityName = columns[1];
