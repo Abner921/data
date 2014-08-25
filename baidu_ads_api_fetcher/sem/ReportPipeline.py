@@ -8,6 +8,9 @@ import sys,os
 from optparse import OptionParser
 from MongoUtil import save_report
 from Contants import Contants
+from LoggingUtil import getLogger
+
+log = getLogger('Pipeline')
 
 def fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTime):
 
@@ -27,7 +30,7 @@ def fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTim
         rowDict['unitOfTimeId']=unitOfTime
         rowDict['createDate']=datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         save_report(rowDict)
-
+    log.info('save data into mongodb successful.')
 
 def test():
     yesterdayStr = (date.today()-timedelta(1)).strftime('%Y-%m-%d')
@@ -82,7 +85,8 @@ if __name__ == "__main__":
     if userid is None:
         for key in Contants.account.keys():
             userid = key
-
+            log.info('useid:'+userid)
             fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTime)
     else:
+        log.info('useid:'+userid)
         fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTime)

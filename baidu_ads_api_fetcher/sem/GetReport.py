@@ -4,13 +4,13 @@ import time
 import os
 from datetime import datetime,date,timedelta
 from ApiSDKSoapClient import ApiSDKSoapClient
-from ApiSDKSoapClient import printSoapResponse
+from ApiSDKSoapClient import printQuota
 from PreviewUtil import *
 from urllib import urlopen
-
+import logging
 from ReportParser import ReportParser
 from Contants import Contants
-
+from LoggingUtil import getLogger
 
 import sys
 default_encoding = 'utf-8'
@@ -18,14 +18,12 @@ if sys.getdefaultencoding() != default_encoding:
     reload(sys)
     sys.setdefaultencoding(default_encoding)
 
-# TODO (robin): define constants
 # TODO (robin): contition filter
-# TODO (robin): csv parse
-# TODO (robin): import data into DB
 # TODO (robin): add realtime report
 # TODO (robin): design function and params
-# TODO (robin): add logs
-# TODO (robin): github
+
+log = getLogger('Report')
+log.setLevel(logging.DEBUG)
 
 class Report():
 
@@ -149,7 +147,7 @@ class Report():
     def genSearchWordRequest(self,startDate,endDate):
         #some tips
         if (startDate < datetime.today()-timedelta(days=31)):
-            print "startDate not allowed."
+            log.warn("startDate not allowed.")
             return
         self.reportTypeDesc = 'SearchWord'
         self.requestParams['startDate'] = startDate
@@ -185,8 +183,8 @@ class Report():
         res = self.client.last_received()
         self.reportId = reportId
         #reportId=res.getChild("Envelope").getChild("Body").getChild('getProfessionalReportIdResponse').getChild('reportId').getText()
-        #printSoapResponse(res)
-        print "reportId:" + reportId
+        printQuota(res)
+        log.info("reportId:" + reportId)
 
     def __getReportState(self):
         isGenerated = self.client.service.getReportState(self.reportId)
@@ -202,7 +200,7 @@ class Report():
                 if isGenerated == 3:
                     break
         self.isGenerated = isGenerated
-        print "isGenerated:" + str(isGenerated)
+        log.info("isGenerated:" + str(isGenerated))
 
     def __getReportFileUrl(self):
         if self.isGenerated == 3:
@@ -210,8 +208,8 @@ class Report():
             res = self.client.last_received()
             #reportFileUrl= res.getChild("Envelope").getChild("Body").getChild('getReportFileUrlResponse').getChild('reportFilePath').getText()
             self.reportFileUrl = reportFileUrl
-            print "reportFileUrl:" + reportFileUrl
-            #printSoapResponse(res)
+            log.info("reportFileUrl:" + reportFileUrl)
+            printQuota(res)
     #---------------------------------------------
     #genReport
     def __genReport(self):
@@ -220,7 +218,7 @@ class Report():
             self.__getReportState()
             self.__getReportFileUrl()
         else:
-            print("please gen request!")
+            log.warn("please gen request!")
             return
 
     def genAdgroupReport(self,startDate,endDate):
@@ -266,7 +264,7 @@ class Report():
         f.write(fileData)
         f.close()
         self.filePath = filePath
-        print "save data into file:"+filePath
+        log.info("save data into file:"+filePath)
 
     def getReport(self,reportType,startDate,endDate,fileDirPath,device=0,unitOfTime=7):
 
@@ -287,16 +285,14 @@ class Report():
             genReportFun.get(reportType)(startDate,endDate)
 
         else:
-            print("please input correct reportType(such as Adgroup,Keyword,Region)!")
+            log.warn("please input correct reportType(such as Adgroup,Keyword,Region)!")
             return(-1)
         self.saveFileData(fileDirPath)
 
 
-
-
 if __name__ == "__main__":  #for test
 
-    report = Report()
+    report = Report('7034363')
 
     startDate = datetime(2014,8,7)
     endDate = datetime(2014,8,8)
