@@ -7,6 +7,9 @@ from datetime import date, timedelta
 import sys,os
 from optparse import OptionParser
 from MongoUtil import save_report
+from LoggingUtil import getLogger
+
+log = getLogger()
 
 def fetchReport(reportType,startDate,endDate,fileDirPath):
 
@@ -22,7 +25,7 @@ def fetchReport(reportType,startDate,endDate,fileDirPath):
         rowDict['reportType']=reportType
         rowDict['createDate']=datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         save_report(rowDict)
-
+    log.info('save data into mongodb successful.')
 
 def test():
     yesterdayStr = (date.today()-timedelta(1)).strftime('%Y-%m-%d')
@@ -65,6 +68,7 @@ if __name__ == "__main__":
     endDate = datetime.strptime(options.endDate,'%Y-%m-%d')
     fileDirPath = options.fileDirPath
 
+    log.debug("fileDirPath:"+fileDirPath)
 
     if not os.path.isdir(fileDirPath):
         os.makedirs(fileDirPath)
