@@ -67,7 +67,6 @@ public class BaiduSemDataConverter implements MongoRowConverter {
 	private static Map<String, String> BAIDU_SEM_COLUMN_NAME_MAP = ImmutableMap.<String, String>builder()
 			.put("impression", "impression")
 			.put("date", "date")
-			.put("impression", "impression")
 			.put("click", "click")
 			.put("cost", "cost")
 			.put("cpc", "cpc")
