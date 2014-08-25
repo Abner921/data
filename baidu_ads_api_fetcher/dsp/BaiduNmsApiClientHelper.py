@@ -12,14 +12,14 @@ class BaiduNmsApiClient():
             self.initConfig()
             url = self.serverUrl + '/sem/nms/v2/' + service + '?wsdl'
             client = suds.client.Client(url)
-            print client    #The soap client stub
+            #print client    #The soap client stub
             header = client.factory.create('ns0:AuthHeader')
             header.username = self.username
             header.password = self.password
             header.token = self.token
             header.target = self.target
             client.set_options(soapheaders=header)
-            print header    #The soap AuthHeader
+            #print header    #The soap AuthHeader
             self.client = client
         except Exception, e:
             print e
