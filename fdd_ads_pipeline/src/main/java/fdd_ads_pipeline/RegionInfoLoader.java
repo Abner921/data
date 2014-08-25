@@ -3,6 +3,7 @@ package fdd_ads_pipeline;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 public class RegionInfoLoader {
@@ -32,4 +33,5 @@ public class RegionInfoLoader {
 	public String getCityIdByName(String cityName) {
 		return districtNameToIdMap.get(cityName);
 	}
+	
 }
