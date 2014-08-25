@@ -3,6 +3,7 @@ import suds
 import sys
 import ConfigParser
 import traceback as tb
+from Contants import Contants
 
 '''
     webservice client
@@ -30,8 +31,9 @@ class ApiSDKSoapClient():
     actionconf=None
     
     
-    def __init__(self, productline,version,service): 
+    def __init__(self, productline,version,service,useid):
         try:
+            self.__useid = useid
             self.initConfig()
             self.__productline=productline
             self.__version=version
@@ -47,15 +49,23 @@ class ApiSDKSoapClient():
             tb.print_exc()
             
     def initConfig(self):
-        if (ApiSDKSoapClient.actionconf==None):
-            cf = ConfigParser.ConfigParser()
-            cf.read("baidu-api.properties")
-            ApiSDKSoapClient.urlconf=cf.get("api", "serverUrl")
-            ApiSDKSoapClient.usernameconf=cf.get("api", "username")
-            ApiSDKSoapClient.passwordconf=cf.get("api", "password")
-            ApiSDKSoapClient.tokenconf=cf.get("api", "token")
-            ApiSDKSoapClient.targetconf=cf.get("api", "target")
-            ApiSDKSoapClient.actionconf=cf.get("api", "action")
+        #if (ApiSDKSoapClient.actionconf==None):
+            #cf = ConfigParser.ConfigParser()
+            #cf.read("baidu-api.properties")
+            #ApiSDKSoapClient.urlconf=cf.get("api", "serverUrl")
+            #ApiSDKSoapClient.usernameconf=cf.get("api", "username")
+            #ApiSDKSoapClient.passwordconf=cf.get("api", "password")
+            #ApiSDKSoapClient.tokenconf=cf.get("api", "token")
+            #ApiSDKSoapClient.targetconf=cf.get("api", "target")
+            #ApiSDKSoapClient.actionconf=cf.get("api", "action")
+        ApiSDKSoapClient.urlconf="https://api.baidu.com"
+        ApiSDKSoapClient.actionconf="API-SDK"
+
+        accountconf = Contants.account[self.__useid]
+        ApiSDKSoapClient.usernameconf=accountconf["username"]
+        ApiSDKSoapClient.passwordconf=accountconf["password"]
+        ApiSDKSoapClient.tokenconf=accountconf["token"]
+        ApiSDKSoapClient.targetconf=accountconf["target"]
             
     def newSoapClient(self):
         try:

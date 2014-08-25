@@ -9,9 +9,9 @@ from optparse import OptionParser
 from MongoUtil import save_report
 from Contants import Contants
 
-def fetchReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime):
+def fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTime):
 
-    report = Report()
+    report = Report(userid)
     report.getReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime)
     ####parse csv
     device = report.requestParams['device']
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     usage = "usage: %prog [options] arg1 arg2"
     parser = OptionParser()
 
+    parser.add_option("--uid", action="store",dest="userid",help="7034363(上海)|7034368(苏州)|7034396(徐州)|6840745",default = None)
     parser.add_option("-r", "--report", action="store",dest="reportType",help="Keyword|Campaign|Region", default="Keyword")
     parser.add_option("-s","--start", action="store", dest="startDate", default=yesterdayStr)
     parser.add_option("-e", "--end",action="store", dest="endDate",default=yesterdayStr)
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     parser.add_option("-u", "--unit",action="store",type="string", dest="unitOfTimeName",default="day",help="year|month|day|week|hour|period")
     (options, args) = parser.parse_args()
 
-
+    userid = options.userid
     reportType = options.reportType
     startDate = datetime.strptime(options.startDate,'%Y-%m-%d')
     endDate = datetime.strptime(options.endDate,'%Y-%m-%d')
@@ -78,4 +79,10 @@ if __name__ == "__main__":
     if not os.path.isdir(fileDirPath):
         os.makedirs(fileDirPath)
 
-    fetchReport(reportType,startDate,endDate,fileDirPath,device,unitOfTime)
+    if userid is None:
+        for key in Contants.account.keys():
+            userid = key
+
+            fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTime)
+    else:
+        fetchReport(userid,reportType,startDate,endDate,fileDirPath,device,unitOfTime)

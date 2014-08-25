@@ -29,8 +29,9 @@ if sys.getdefaultencoding() != default_encoding:
 
 class Report():
 
-    def __init__(self):
-        apiSDKSoapClient = ApiSDKSoapClient('sms','v3','ReportService')
+    def __init__(self,userid):
+        self.userid = userid
+        apiSDKSoapClient = ApiSDKSoapClient('sms','v3','ReportService',userid)
         newClient = apiSDKSoapClient.newSoapClient()
         self.client = newClient
         self.requestParams={}
@@ -258,7 +259,7 @@ class Report():
         endDateStr = datetime.strftime(endDate,'%Y%m%d')
         device = self.requestParams['device']
         #fileName = self.reportTypeDesc+'_'+str(device)+'['+startDateStr+'-'+endDateStr+'].csv'
-        fileName = "sem-baidu"+'-'+Contants.deviceName[device]+'-'+self.reportTypeDesc+'.csv'
+        fileName = "sem-baidu"+'-'+self.userid+'-'+Contants.deviceName[device]+'-'+self.reportTypeDesc+'.csv'
         filePath = os.path.join(fileDirPath,fileName)
         fileData=urlopen(self.reportFileUrl).read()
         f = file(filePath,"wb")
