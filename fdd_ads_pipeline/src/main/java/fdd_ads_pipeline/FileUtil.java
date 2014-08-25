@@ -22,28 +22,25 @@ public class FileUtil {
 	public static List<String> readLines(String fileName) {
 		File sourceFile = new File(new File("").getAbsolutePath() + File.separator + fileName);
 		BufferedReader reader = null;
+		List<String> result = Lists.newArrayList();
 		try {
 			reader = new BufferedReader(new FileReader(sourceFile));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
-		
-		List<String> result = Lists.newArrayList();
-		String line = null;
-		do {
-			try {
+			String line = "";
+			while(line != null) {
 				line = reader.readLine();
 				result.add(line);
+			}
+		} catch (FileNotFoundException fnfe) {
+			fnfe.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if(reader != null)
+					reader.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} while (line != null);
-		
-		try {
-			reader.close();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		
 		return result;
@@ -55,26 +52,17 @@ public class FileUtil {
 		File file = new File(new File("").getAbsolutePath() + File.separator + fileName);
 		try {
 			writer = new BufferedWriter(new FileWriter(file));
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
-		
-		for(String line : lines) {
-			try {
+			
+			for(String line : lines) {
 				writer.write(line);
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
-		}
-		
-		try {
 			writer.flush();
-		} catch (Exception e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 			try {
-				writer.close();
+				if(writer != null)
+					writer.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -84,7 +72,6 @@ public class FileUtil {
 
 	public void writeCsvLine(String fileName, List<String> columns) {
 		String line = Joiner.on(',').join(columns);
-		logger.debug(line);
 		for (String value : columns) {
 			if (value.contains(",")) {
 				logger.warn("ERROR: contains comma in the CSV columms: " + line);
@@ -102,13 +89,12 @@ public class FileUtil {
 			e.printStackTrace();
 		} finally {
 			try {
-				writer.close();
+				if(writer != null)
+					writer.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		
-		
 	}
 
 }
