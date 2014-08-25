@@ -23,14 +23,14 @@ public class FetchDistrictInfoMain {
 				"select district_id, district_name, district_full_name, district_short_name from fdd_basic.t_districts;");
 		
 		FileUtil fileUtil = new FileUtil();
-		String fileName = "district_info.csv";
+		fileUtil.createNewFile("district_info.csv");
 		while (allDistricts.next()) {
 			List<String> columns = Lists.newArrayList(
 					allDistricts.getString(1),
 					allDistricts.getString(2),
 					allDistricts.getString(3),
 					allDistricts.getString(4));
-			fileUtil.writeCsvLine(fileName, columns);
+			fileUtil.writeCsvLine(columns);
 		}
 		
 		mysql.close();

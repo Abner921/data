@@ -18,6 +18,8 @@ import com.google.common.collect.Lists;
 public class FileUtil {
 
 	private static Logger logger = LoggerFactory.getLogger(FileUtil.class.getCanonicalName());
+
+	private File file;
 	
 	public static List<String> readLines(String fileName) {
 		File sourceFile = new File(getProjectRootPath(fileName));
@@ -68,18 +70,8 @@ public class FileUtil {
 			}
 		}
 	}
-
-
-	public void writeCsvLine(String fileName, List<String> columns) {
-		String line = Joiner.on(',').join(columns);
-		for (String value : columns) {
-			if (value.contains(",")) {
-				logger.warn("ERROR: contains comma in the CSV columms: " + line);
-				return;
-			}
-		}
-		
-		File file = new File(getProjectRootPath(fileName));
+	
+	public void writeLine(String line) {
 		BufferedWriter writer = null;
 		try {
 			writer = new BufferedWriter(new FileWriter(file, true));
@@ -97,6 +89,23 @@ public class FileUtil {
 		}
 	}
 
+	public void writeCsvLine(List<String> columns) {
+		String line = Joiner.on(',').join(columns);
+		for (String value : columns) {
+			if (value.contains(",")) {
+				logger.warn("ERROR: contains comma in the CSV columms: " + line);
+				return;
+			}
+		}
+		
+		writeLine(line);
+	}
+
+	public File createNewFile(String fileName) {
+		String filePath = getProjectRootPath(fileName);
+		file = new File(filePath);
+		return file;
+	}
 
 	public static String getProjectRootPath(String fileName) {
 		return new File("").getAbsolutePath() + File.separator + fileName;
