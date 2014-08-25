@@ -6,8 +6,6 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 
 public class RegionInfoLoader {
-
-
 	private Map<String, String> districtNameToIdMap = Maps.newHashMap();
 	
 	public RegionInfoLoader() {

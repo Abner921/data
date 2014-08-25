@@ -3,6 +3,8 @@
 #################
 
 .metadata
+.classpath
+.settings/
 bin/
 tmp/
 *.tmp
