@@ -9,7 +9,6 @@ from PreviewUtil import *
 from urllib import urlopen
 
 from ReportParser import ReportParser
-from MySqlUtil import MySqlUtil
 from Contants import Contants
 
 
@@ -308,12 +307,7 @@ if __name__ == "__main__":  #for test
     parseReport = ReportParser(report)
 
     ##
-    mysqlConn = MySqlUtil()
 
-    mysqlConn.initSqlStr(parseReport.csvHeadCode)
-
-    for rowDict in parseReport.parseCsvFileBody():
-        mysqlConn.mergeReprtToDb(rowDict)
 
 
 
