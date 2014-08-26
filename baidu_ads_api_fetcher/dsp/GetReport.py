@@ -9,7 +9,7 @@ from BaiduNmsApiClientHelper import printSoapResponse
 from urllib import urlopen
 from ReportParser import ReportParser
 from MongoUtil import save_report
-
+from LoggingUtil import getLogger
 from datetime import datetime,date,timedelta
 
 import sys
@@ -18,11 +18,12 @@ if sys.getdefaultencoding() != default_encoding:
     reload(sys)
     sys.setdefaultencoding(default_encoding)
 
-# TODO (robin): define constants
+
 # TODO (robin): contition filter
 # TODO (robin): add realtime report
 # TODO (robin): design function and params
-# TODO (robin): add logs
+
+log = getLogger()
 
 class Report():
 
@@ -146,7 +147,7 @@ class Report():
         res = self.client.last_received()
         self.reportId = reportId
         #printSoapResponse(res)
-        print "reportId:" + reportId
+        log.info("reportId:" + reportId)
 
     def __getReportState(self):
         isGenerated = self.client.service.getReportState(self.reportId)
@@ -161,20 +162,20 @@ class Report():
                 if isGenerated == 3:
                     break
         self.isGenerated = isGenerated
-        print "isGenerated:" + str(isGenerated)
+        log.info( "isGenerated:" + str(isGenerated))
 
         if isGenerated != 3:
-            print 'report generated with failure so exit'
+            log.error('report generated with failure so exit')
             sys.exit(1)
         else:
-            print 'report generated successfully!'
+            log.info('report generated successfully!')
 
     def __getReportFileUrl(self):
         if self.isGenerated == 3:
             reportFileUrl = self.client.service.getReportFileUrl(self.reportId)
             res = self.client.last_received()
             self.reportFileUrl = reportFileUrl
-            print "reportFileUrl:" + reportFileUrl
+            log.info( "reportFileUrl:" + reportFileUrl)
             #printSoapResponse(res)
     #---------------------------------------------
     #genReport
@@ -184,7 +185,7 @@ class Report():
             self.__getReportState()
             self.__getReportFileUrl()
         else:
-            print("please gen request!")
+            log.error("please gen request!")
             return
 
     def genAdgroupReport(self,startDate,endDate):
@@ -229,7 +230,7 @@ class Report():
         f.write(fileData)
         f.close()
         self.filePath = filePath
-        print "save data into file:"+filePath
+        log.info( "save data into file:"+filePath)
 
     def getReport(self,reportType,startDate,endDate,fileDirPath):
 
@@ -247,7 +248,7 @@ class Report():
             genReportFun.get(reportType)(startDate,endDate)
 
         else:
-            print("please input correct reportType(such as Adgroup,Keyword,Region)!")
+            log.error("please input correct reportType(such as Adgroup,Keyword,Region)!")
             return(-1)
         self.saveFileData(fileDirPath)
 

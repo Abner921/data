@@ -6,6 +6,7 @@ from ApiSDKSoapClient import ApiSDKSoapClient
 from ApiSDKSoapClient import printSoapResponse
 from PreviewUtil import *
 from urllib import urlopen
+from Contants import Contants
 
 import sys
 default_encoding = 'utf-8'
@@ -15,7 +16,7 @@ if sys.getdefaultencoding() != default_encoding:
 
 if __name__ == "__main__":
     try:
-        apiSDKSoapClient = ApiSDKSoapClient('sms','v3','ReportService')
+        apiSDKSoapClient = ApiSDKSoapClient('sms','v3','ReportService','7034363')
         newClient = apiSDKSoapClient.newSoapClient()
 
         startDate = datetime(2014,5,7)
