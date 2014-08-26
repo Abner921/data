@@ -62,7 +62,7 @@ public class SogouSemDataConverter implements MongoRowConverter {
 	}
 
 	private String getHouseCityId(String houseName) {
-		return HouseInfoLoader.getHouseIdByName(houseName);
+		return HouseInfoLoader.getHouseCityIdByName(houseName);
 	}
 
 	private String getHouseIdByName(String houseName) {
