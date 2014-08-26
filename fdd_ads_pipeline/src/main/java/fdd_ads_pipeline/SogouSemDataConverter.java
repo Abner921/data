@@ -13,8 +13,6 @@ import com.mongodb.DBObject;
 public class SogouSemDataConverter implements MongoRowConverter {
 	private static Logger logger = LoggerFactory.getLogger(SemDataProcessor.class.getCanonicalName());
 	
-	private static HouseInfoLoader houseInfoLoader = new HouseInfoLoader();
-	
 	private static Map<String, String> SOGOU_SEM_COLUMN_NAME_MAP = ImmutableMap.<String, String>builder()
 			.put("日期", "date")
 			.put("展示数", "impression")	
@@ -45,11 +43,14 @@ public class SogouSemDataConverter implements MongoRowConverter {
 		
 		DBObject semRow = new BasicDBObject();
 		for (String originColumn : SOGOU_SEM_COLUMN_NAME_MAP.keySet()) {
-			semRow.put(SOGOU_SEM_COLUMN_NAME_MAP.get(originColumn), (String) raw.get(originColumn));
+			Object value = raw.get(originColumn);
+			// avoid value.toString throw NullPointerException
+			value = (value==null) ? "" : value;
+			semRow.put(SOGOU_SEM_COLUMN_NAME_MAP.get(originColumn), value.toString());
 		}
 		
 		semRow.put("type", "sogou_sem");
-		semRow.put("device", "sogou_sem");
+		semRow.put("device", device);
 		semRow.put("house_id", houseId);
 		semRow.put("house_name", houseName);
 		semRow.put("house_city_id", houseCityId);
@@ -61,11 +62,11 @@ public class SogouSemDataConverter implements MongoRowConverter {
 	}
 
 	private String getHouseCityId(String houseName) {
-		return houseInfoLoader.getHouseIdByName(houseName);
+		return HouseInfoLoader.getHouseIdByName(houseName);
 	}
 
 	private String getHouseIdByName(String houseName) {
-		return houseInfoLoader.getHouseIdByName(houseName);
+		return HouseInfoLoader.getHouseIdByName(houseName);
 	}
 
 	private String getHouseNameFromCampaignName(String campaignName) {

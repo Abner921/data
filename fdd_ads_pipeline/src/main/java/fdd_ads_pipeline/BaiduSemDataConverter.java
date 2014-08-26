@@ -5,6 +5,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -12,8 +13,6 @@ import com.mongodb.DBObject;
 public class BaiduSemDataConverter implements MongoRowConverter {
 	private static Logger logger = LoggerFactory.getLogger(SemDataProcessor.class.getCanonicalName());
 	
-	private static HouseInfoLoader houseInfoLoader = new HouseInfoLoader();
-
 	/*
 	private static String testData = {
 	    "_id" : ObjectId("53fb148b155363827d35ce72"),
@@ -69,7 +68,6 @@ public class BaiduSemDataConverter implements MongoRowConverter {
 			.put("date", "date")
 			.put("click", "click")
 			.put("cost", "cost")
-			.put("cpc", "cpc")
 			.put("keywordId", "keyword_id")
 			.put("wordId", "word_id")
 			.put("keyword", "keyword_name")
@@ -77,9 +75,7 @@ public class BaiduSemDataConverter implements MongoRowConverter {
 			.put("account", "account_name")
 			.put("campaignId", "campaign_id")
 			.put("campaignName", "campaign_name")
-			.put("house_name", "house_name")
 			.put("deviceName", "device")
-			.put("deviceId", "device_id")
 			.put("adgroupName", "adgroup_name")
 			.put("adgroupId", "adgroup_id")
 			.build();
@@ -99,31 +95,56 @@ public class BaiduSemDataConverter implements MongoRowConverter {
 		
 		String campaignName = raw.get("campaignName").toString();
 		String houseName = getHouseNameFromCampaignName(campaignName);
+		String servingType = getServingTypeFromCampaignName(campaignName);
+		String servingRegion = getServingRegionFromCampaignName(campaignName);
 		String houseId = getHouseIdByName(houseName);
 		String houseCityId = getHouseCityId(houseId);
 		
 		DBObject semRow = new BasicDBObject();
 		for (String originColumn : BAIDU_SEM_COLUMN_NAME_MAP.keySet()) {
-			semRow.put(BAIDU_SEM_COLUMN_NAME_MAP.get(originColumn), (String) raw.get(originColumn));
+			Object value = raw.get(originColumn);
+			// avoid value.toString throw NullPointerException
+			value = (value==null) ? "" : value;
+			semRow.put(BAIDU_SEM_COLUMN_NAME_MAP.get(originColumn), value.toString());
 		}
 
+		semRow.put("type", "baidu_sem");
 		semRow.put("house_id", houseId);
+		semRow.put("house_name", houseName);
 		semRow.put("house_city_id", houseCityId);
+		semRow.put("keyword_type", "");
+		semRow.put("serving_type", servingType);
+		semRow.put("serving_region", servingRegion);
 		
-		// TODO: add new columns: house / city / others.
 		return semRow;
 	}
 
 	private String getHouseCityId(String houseName) {
-		return houseInfoLoader.getHouseIdByName(houseName);
+		return HouseInfoLoader.getHouseIdByName(houseName);
 	}
 
 	private String getHouseIdByName(String houseName) {
-		return houseInfoLoader.getHouseIdByName(houseName);
+		return HouseInfoLoader.getHouseIdByName(houseName);
 	}
 
 	private String getHouseNameFromCampaignName(String campaignName) {
-		// TODO Auto-generated method stub
+		if(!Strings.isNullOrEmpty(campaignName)) {
+			return campaignName.split("-")[1];
+		}
+		return null;
+	}
+	
+	private String getServingRegionFromCampaignName(String campaignName) {
+		if(!Strings.isNullOrEmpty(campaignName)) {
+			return campaignName.split("-")[0];
+		}
+		return null;
+	}
+
+	private String getServingTypeFromCampaignName(String campaignName) {
+		if(!Strings.isNullOrEmpty(campaignName)) {
+			return campaignName.split("-")[2];
+		}
 		return null;
 	}
 }

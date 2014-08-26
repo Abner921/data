@@ -1,13 +1,11 @@
 package fdd_ads_pipeline;
 
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableMap;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -26,15 +24,17 @@ public class SemDataProcessor {
 	private SogouSemDataConverter sogouConverter = new SogouSemDataConverter();
 	
 	public void ProcessAll() {
-		ProcessSem("baidu_sem_raw", baiduConverter);
-		ProcessSem("sogou_sem_raw", sogouConverter);
+		DBObject baiduQuery = new BasicDBObject();
+		baiduQuery.put("reportType", "Keyword");
+		ProcessSem("baidu_sem_raw", baiduConverter, baiduQuery);
+		ProcessSem("sogou_sem_raw", sogouConverter, null);
 	}
 	
-	public void ProcessSem(String collectionName, MongoRowConverter converter) {
+	public void ProcessSem(String collectionName, MongoRowConverter converter, DBObject query) {
 		DB rawDB = LoadMongoDb("fdd_ads");
 		DBCollection rawCollection = rawDB.getCollection(collectionName);
 		DBCollection semCollection = rawDB.getCollection("sem_data");
-		DBCursor cursor = rawCollection.find();
+		DBCursor cursor = rawCollection.find(query);
 		
 		int i = 0;
 		while(cursor.hasNext()) {
