@@ -49,8 +49,8 @@ if __name__ == "__main__":
     yesterday = datetime.strptime(yesterdayStr,'%Y-%m-%d')
 
 
-    baseDir = os.path.dirname(os.path.dirname(__file__))
-    dataDirPath = os.path.join(baseDir,'data',yesterday.strftime('%Y-%m/%d'))
+    baseDir = os.path.split(os.path.realpath(__file__))[0]
+    dataDirPath = os.path.join(baseDir,'..','data',yesterday.strftime('%Y-%m/%d'))
 
     usage = "usage: %prog [options] arg1 arg2"
     parser = OptionParser()

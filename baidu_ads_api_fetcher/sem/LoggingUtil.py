@@ -9,8 +9,8 @@ def initLogger():
     logger.setLevel(logging.DEBUG)
 
     #FileHandler
-    baseDir = os.path.dirname(os.path.dirname(__file__))
-    logdir = os.path.join(baseDir,'log',date.today().strftime('%Y-%m/%d'))
+    baseDir = os.path.split(os.path.realpath(__file__))[0]
+    logdir = os.path.join(baseDir,'..','log',date.today().strftime('%Y-%m/%d'))
     logname = "sem-baidu.log"
 
     if not os.path.isdir(logdir):

@@ -2,15 +2,15 @@
 import logging
 import os
 from datetime import date
-
+import logging.handlers
 
 def initLogger():
     logger = logging.getLogger("dsp")
     logger.setLevel(logging.DEBUG)
 
     #FileHandler
-    baseDir = os.path.dirname(os.path.dirname(__file__))
-    logdir = os.path.join(baseDir,'log',date.today().strftime('%Y-%m/%d'))
+    baseDir = os.path.split(os.path.realpath(__file__))[0]
+    logdir = os.path.join(baseDir,'..','log',date.today().strftime('%Y-%m/%d'))
     logname = "dsp-baidu.log"
 
     if not os.path.isdir(logdir):
@@ -41,7 +41,7 @@ initlogger = initLogger()
 def getLogger(name=None):
     if name is None:
         return initlogger
-    logger = logging.getLogger("sem"+'.'+name)
+    logger = logging.getLogger("dsp"+'.'+name)
     return logger
 
 
