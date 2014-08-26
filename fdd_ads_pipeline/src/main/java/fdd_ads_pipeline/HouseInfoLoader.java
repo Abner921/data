@@ -8,10 +8,10 @@ import com.google.common.collect.Maps;
 
 public class HouseInfoLoader {
 
-	private Map<String, String> houseNameToIdMap = Maps.newHashMap();
-	private Map<String, String> houseNameToCityIdMap = Maps.newHashMap();
+	private static Map<String, String> houseNameToIdMap = Maps.newHashMap();
+	private static Map<String, String> houseNameToCityIdMap = Maps.newHashMap();
 	
-	public HouseInfoLoader() {
+	static {
 		List<Map<String, String>> houseList = FangddApiFetcher.getAllHouseList(
 				ImmutableList.of(
 						FangddApiFetcher.HOUSE_NAME, FangddApiFetcher.HOUSE_ID,
@@ -28,11 +28,15 @@ public class HouseInfoLoader {
 		}
 	}
 
-	public String getHouseIdByName(String houseName) {
+	private HouseInfoLoader() {
+		// ensure the config info to load only once
+	}
+
+	public static String getHouseIdByName(String houseName) {
 		return houseNameToIdMap.get(houseName);
 	}
 
-	public String getHouseCityIdByName(String houseName) {
+	public static String getHouseCityIdByName(String houseName) {
 		return houseNameToCityIdMap.get(houseName);
 	}
 }

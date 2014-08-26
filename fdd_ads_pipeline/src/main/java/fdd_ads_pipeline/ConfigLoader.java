@@ -1,6 +1,5 @@
 package fdd_ads_pipeline;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +12,7 @@ public class ConfigLoader {
 		String fileName = "jdbc.properties";
 		jdbcProp = new Properties();
 		try {
-			InputStream is = new FileInputStream(new File("").getAbsolutePath() + File.separator + fileName);
+			InputStream is = new FileInputStream(FileUtil.getProjectRootPath(fileName));
 			jdbcProp.load(is);
 		} catch (IOException e) {
 			e.printStackTrace();
